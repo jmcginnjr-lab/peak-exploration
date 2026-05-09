@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peak Earnings Calculator</title>
+<style>
+  :root {
+    --color-text-primary: #0f0f0f;
+    --color-text-secondary: #6b6b6b;
+    --color-text-tertiary: #9b9b9b;
+    --color-text-link: #2563eb;
+    --color-text-warning: #92400e;
+    --color-text-success: #065f46;
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f5f5f5;
+    --color-background-warning: #fef3c7;
+    --color-background-success: #d1fae5;
+    --color-border-secondary: #d4d4d4;
+    --color-border-tertiary: #e5e5e5;
+    --border-radius-md: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .page-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  .page-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: .25rem;
+  }
+
+  .page-sub {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    margin-bottom: 2rem;
+  }
+
+  input[type="text"],
+  input[type="number"] {
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    font-size: 14px;
+    color: var(--color-text-primary);
+    background: var(--color-background-primary);
+    outline: none;
+    transition: border-color .15s;
+  }
+
+  input[type="text"]:focus,
+  input[type="number"]:focus {
+    border-color: var(--color-text-link);
+  }
+
+  button {
+    background: var(--color-text-primary);
+    color: var(--color-background-primary);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: opacity .15s;
+  }
+
+  button:hover { opacity: .8; }
+  button:disabled { opacity: .45; cursor: default; }
+
+  /* ── Layout ── */
+  .calc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .input-row label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .input-row input { width: 100%; }
+
+  .divider {
+    border: none;
+    border-top: .5px solid var(--color-border-tertiary);
+    margin: 1.5rem 0;
+  }
+
+  /* ── Results ── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .metric {
+    background: var(--color-background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: .875rem 1rem;
+  }
+
+  .metric .mlabel {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .metric .mval {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  .metric .msub {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-top: 3px;
+  }
+
+  .accent {
+    background: var(--color-background-primary);
+    border: .5px solid var(--color-border-secondary);
+  }
+
+  .wide { grid-column: 1 / -1; }
+  .wide .mval { font-size: 24px; }
+
+  /* ── Range card ── */
+  .range-card {
+    grid-column: 1 / -1;
+    background: var(--color-background-primary);
+    border: .5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    padding: .875rem 1rem;
+  }
+
+  .range-card .mlabel {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .range-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0 4px;
+  }
+
+  .range-lo,
+  .range-hi {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+  }
+
+  .range-dash {
+    font-size: 18px;
+    color: var(--color-text-tertiary);
+  }
+
+  .range-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--color-border-tertiary);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .range-fill {
+    height: 100%;
+    background: var(--color-text-link);
+    border-radius: 3px;
+    width: 100%;
+  }
+
+  .range-sub { font-size: 11px; color: var(--color-text-tertiary); }
+
+  /* ── Lookup row ── */
+  .lookup-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .lookup-row input { flex: 1; }
+
+  .lookup-row button {
+    white-space: nowrap;
+    height: 36px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+
+  .hint {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-top: 6px;
+  }
+
+  /* ── Badges ── */
+  .est-badge {
+    font-size: 10px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: var(--border-radius-md);
+    background: var(--color-background-warning);
+    color: var(--color-text-warning);
+  }
+
+  .auto-badge {
+    font-size: 10px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: var(--border-radius-md);
+    background: var(--color-background-success);
+    color: var(--color-text-success);
+  }
+
+  /* ── Section headers ── */
+  .section-label {
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin: 1.25rem 0 .5rem;
+  }
+
+  .view-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 1.5rem 0 .5rem;
+  }
+
+  .view-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  .view-note {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+
+  /* ── Lookup status ── */
+  .lookup-status {
+    font-size: 11px;
+    margin-top: 6px;
+    min-height: 16px;
+    color: var(--color-text-tertiary);
+  }
+
+  .lookup-status.loading { color: var(--color-text-link); }
+  .lookup-status.done    { color: var(--color-text-success); }
+  .lookup-status.error   { color: #b91c1c; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <div class="page-title">Peak Earnings Calculator</div>
+  <div class="page-sub">Internal sales tool — shows a restaurant's potential earnings on Peak</div>
+
+  <!-- ── Restaurant lookup ── -->
+  <div style="margin-bottom:1.25rem">
+    <div style="font-size:12px;color:var(--color-text-secondary);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px">Restaurant name</div>
+    <div class="lookup-row">
+      <input type="text" id="restaurantUrl" value="Halls Chophouse, Charleston SC" placeholder="e.g. Norma's Palm Springs">
+      <button id="lookupBtn" onclick="triggerLookup()">Look up hours</button>
+    </div>
+    <div class="lookup-status" id="lookupStatus">Results will be populated by search automatically.</div>
+  </div>
+
+  <!-- ── Inputs ── -->
+  <div class="calc-grid">
+    <div class="input-row">
+      <label>Total tables <span class="est-badge">est</span></label>
+      <input type="number" id="totalTables" min="0" value="40">
+    </div>
+    <div class="input-row">
+      <label>Total seats <span class="est-badge">est</span></label>
+      <input type="number" id="totalSeats" min="0" value="160">
+    </div>
+    <div class="input-row">
+      <label>Priceable tables</label>
+      <input type="number" id="priceableTables" min="0" placeholder="your estimate">
+    </div>
+    <div class="input-row">
+      <label>Avg spend per person ($)</label>
+      <input type="number" id="avgSpend" min="0" placeholder="~$120–$160">
+    </div>
+    <div class="input-row">
+      <label>Days open per week <span id="daysOpenBadge" class="auto-badge">auto</span></label>
+      <input type="number" id="daysOpen" min="0" max="7" value="7">
+    </div>
+    <div class="input-row">
+      <label>Turns per day <span class="est-badge">est</span></label>
+      <input type="number" id="turnsPerDay" min="0" step="0.5" value="2">
+    </div>
+    <div class="input-row">
+      <label>Days closed per year <span class="est-badge">est</span></label>
+      <input type="number" id="daysClosed" min="0" value="8">
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ── Annual ── -->
+  <div class="section-label">Annual</div>
+  <div class="results-grid">
+    <div class="metric">
+      <div class="mlabel">Priceable tables</div>
+      <div class="mval" id="r-pricedPct">—</div>
+      <div class="msub" id="r-pricedSub">of total tables</div>
+    </div>
+    <div class="metric">
+      <div class="mlabel">Avg table price</div>
+      <div class="mval" id="r-tablePrice">—</div>
+      <div class="msub">22.5% of avg spend</div>
+    </div>
+    <div class="metric">
+      <div class="mlabel">Operating days / yr</div>
+      <div class="mval" id="r-opDays">—</div>
+      <div class="msub" id="r-opDaysSub"></div>
+    </div>
+    <div class="range-card">
+      <div class="mlabel">Restaurant earnings</div>
+      <div class="range-bar-wrap">
+        <span class="range-lo" id="r-netLo">—</span>
+        <span class="range-dash">–</span>
+        <div class="range-bar"><div class="range-fill"></div></div>
+        <span class="range-hi" id="r-netHi">—</span>
+      </div>
+      <div class="range-sub" id="r-netSub">After Peak fee of 5%–30%</div>
+    </div>
+  </div>
+
+  <!-- ── 3-Year ── -->
+  <div class="view-header">
+    <span class="view-title">3-Year View</span>
+    <span class="view-note">OpenTable &amp; Resy minimum contract length</span>
+  </div>
+  <div class="results-grid">
+    <div class="metric wide accent">
+      <div class="mlabel">Left on the table — no growth</div>
+      <div class="mval" id="r3-flat">—</div>
+      <div class="msub" id="r3-flatSub">Restaurant earnings × 3</div>
+    </div>
+    <div class="metric wide">
+      <div class="mlabel">Left on the table — decelerating growth</div>
+      <div class="mval" id="r3-growth">—</div>
+      <div class="msub" id="r3-growthSub">15% → 11% → 8%, plateaus at 3%</div>
+    </div>
+    <div class="metric wide" style="border:.5px solid var(--color-border-secondary)">
+      <div class="mlabel">If invested in S&amp;P 500 — 10% annual return</div>
+      <div class="mval" id="r3-index">—</div>
+      <div class="msub" id="r3-indexSub">Earnings compounded annually at 10%</div>
+    </div>
+  </div>
+
+  <!-- ── 10-Year ── -->
+  <div class="view-header">
+    <span class="view-title">10-Year View</span>
+    <span class="view-note">Long-term compounding potential</span>
+  </div>
+  <div class="results-grid">
+    <div class="metric wide accent">
+      <div class="mlabel">Left on the table — no growth</div>
+      <div class="mval" id="r10-flat">—</div>
+      <div class="msub" id="r10-flatSub">Restaurant earnings × 10</div>
+    </div>
+    <div class="metric wide">
+      <div class="mlabel">Left on the table — decelerating growth</div>
+      <div class="mval" id="r10-growth">—</div>
+      <div class="msub" id="r10-growthSub">15% → 11% → 8% → plateaus at 3%</div>
+    </div>
+    <div class="metric wide" style="border:.5px solid var(--color-border-secondary)">
+      <div class="mlabel">If invested in S&amp;P 500 — 10% annual return</div>
+      <div class="mval" id="r10-index">—</div>
+      <div class="msub" id="r10-indexSub">Earnings compounded annually at 10%</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function fmt(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+
+function growthRate(y) { return Math.max(0.03, 0.15 * Math.pow(0.75, y)); }
+
+function project(base, years) {
+  var flat = base * years;
+  var growth = 0;
+  var yr = base;
+  var yVals = [];
+  for (var i = 0; i < years; i++) {
+    growth += yr;
+    yVals.push(yr);
+    yr *= (1 + growthRate(i));
+  }
+  var idx = 0;
+  for (var j = 0; j < years; j++) {
+    idx = (idx + yVals[j]) * (j < years - 1 ? 1.10 : 1);
+  }
+  return { flat: flat, growth: growth, index: idx, yr1: base, yrN: yVals[years - 1] };
+}
+
+function calc() {
+  var tt  = parseFloat(document.getElementById('totalTables').value)    || 0;
+  var pt  = parseFloat(document.getElementById('priceableTables').value) || 0;
+  var sp  = parseFloat(document.getElementById('avgSpend').value)        || 0;
+  var dw  = parseFloat(document.getElementById('daysOpen').value)        || 0;
+  var tp  = parseFloat(document.getElementById('turnsPerDay').value)     || 0;
+  var dc  = parseFloat(document.getElementById('daysClosed').value)      || 0;
+
+  var tablePrice = sp * 0.225;
+  var opDays     = Math.max(0, Math.round(dw * 52) - dc);
+  var gross      = pt * tp * opDays * tablePrice;
+
+  var netLo  = gross * 0.70;
+  var netHi  = gross * 0.95;
+  var netMid = gross * 0.825;
+
+  var pricedPct = (tt > 0 && pt > 0) ? Math.round((pt / tt) * 100) : null;
+  var hasData   = sp > 0 && pt > 0 && dw > 0 && tp > 0;
+
+  var p3  = project(netMid, 3);
+  var p10 = project(netMid, 10);
+
+  // Annual
+  document.getElementById('r-pricedPct').textContent  = pricedPct !== null ? (pricedPct + '%') : '—';
+  document.getElementById('r-pricedSub').textContent  = (tt > 0 && pt > 0) ? (pt + ' of ' + tt + ' tables') : 'of total tables';
+  document.getElementById('r-tablePrice').textContent = sp > 0 ? fmt(tablePrice) : '—';
+  document.getElementById('r-opDays').textContent     = dw > 0 ? opDays.toLocaleString() : '—';
+  document.getElementById('r-opDaysSub').textContent  = dw > 0 ? (dw + ' days/wk − ' + dc + ' closed') : '';
+  document.getElementById('r-netLo').textContent      = hasData ? fmt(netLo) : '—';
+  document.getElementById('r-netHi').textContent      = hasData ? fmt(netHi) : '—';
+  document.getElementById('r-netSub').textContent     = hasData
+    ? 'After Peak fee of 5%–30% (' + fmt(netLo) + '–' + fmt(netHi) + '/yr)'
+    : 'After Peak fee of 5%–30%';
+
+  // 3-Year
+  document.getElementById('r3-flat').textContent      = hasData ? fmt(p3.flat)   : '—';
+  document.getElementById('r3-flatSub').textContent   = hasData ? fmt(netMid) + ' × 3 years' : 'Restaurant earnings × 3';
+  document.getElementById('r3-growth').textContent    = hasData ? fmt(p3.growth) : '—';
+  document.getElementById('r3-growthSub').textContent = hasData ? 'Yr 1 ' + fmt(p3.yr1) + ' → Yr 3 ' + fmt(p3.yrN) + ' (15%→8%)' : '15% → 11% → 8%, plateaus at 3%';
+  document.getElementById('r3-index').textContent     = hasData ? fmt(p3.index)  : '—';
+  document.getElementById('r3-indexSub').textContent  = hasData ? 'Growing earnings reinvested at 10% annually' : 'Earnings compounded annually at 10%';
+
+  // 10-Year
+  document.getElementById('r10-flat').textContent      = hasData ? fmt(p10.flat)   : '—';
+  document.getElementById('r10-flatSub').textContent   = hasData ? fmt(netMid) + ' × 10 years' : 'Restaurant earnings × 10';
+  document.getElementById('r10-growth').textContent    = hasData ? fmt(p10.growth) : '—';
+  document.getElementById('r10-growthSub').textContent = hasData ? 'Yr 1 ' + fmt(p10.yr1) + ' → Yr 10 ' + fmt(p10.yrN) + ' (plateaus ~3%)' : '15% → 11% → 8% → plateaus at 3%';
+  document.getElementById('r10-index').textContent     = hasData ? fmt(p10.index)  : '—';
+  document.getElementById('r10-indexSub').textContent  = hasData ? 'Growing earnings reinvested at 10% annually' : 'Earnings compounded annually at 10%';
+}
+
+// ── Lookup ──
+function triggerLookup() {
+  var q = document.getElementById('restaurantUrl').value.trim();
+  if (!q) return;
+
+  var status = document.getElementById('lookupStatus');
+  var btn = document.getElementById('lookupBtn');
+  status.className = 'lookup-status loading';
+  status.textContent = 'Searching for "' + q + '"…';
+  btn.disabled = true;
+
+  // In the Claude Code / Peak widget context this fires the host chat.
+  // In standalone HTML we simulate the call and show a note.
+  if (typeof sendPrompt === 'function') {
+    sendPrompt('PEAK_LOOKUP: ' + q);
+    status.textContent = 'Search sent — Claude will populate the fields above.';
+    status.className = 'lookup-status done';
+    btn.disabled = false;
+  } else {
+    // Standalone demo: show guidance
+    setTimeout(function () {
+      status.className = 'lookup-status';
+      status.textContent = 'Paste this into Claude: "PEAK_LOOKUP: ' + q + '" to populate hours & capacity.';
+      btn.disabled = false;
+    }, 800);
+  }
+}
+
+// ── Populate fields from Claude lookup response ──
+// Call this from outside when Claude returns data.
+// e.g. populateLookup({ daysOpen: 6, totalTables: 35, totalSeats: 140 })
+window.populateLookup = function (data) {
+  var autoFields = ['daysOpen', 'totalTables', 'totalSeats', 'daysClosed'];
+  autoFields.forEach(function (id) {
+    if (data[id] !== undefined) {
+      var el = document.getElementById(id);
+      if (el) el.value = data[id];
+      var badge = document.getElementById(id + 'Badge');
+      if (!badge) {
+        var label = el && el.closest('.input-row') && el.closest('.input-row').querySelector('label');
+        if (label) {
+          var existing = label.querySelector('.est-badge, .auto-badge');
+          if (existing) {
+            existing.className = 'auto-badge';
+            existing.textContent = 'auto';
+          }
+        }
+      }
+    }
+  });
+  calc();
+  var status = document.getElementById('lookupStatus');
+  status.className = 'lookup-status done';
+  status.textContent = 'Hours & capacity populated. Fill in priceable tables and avg spend to see results.';
+};
+
+// Live recalc on any input change
+['totalTables','totalSeats','priceableTables','avgSpend','daysOpen','turnsPerDay','daysClosed'].forEach(function (id) {
+  document.getElementById(id).addEventListener('input', calc);
+});
+
+calc();
+</script>
+</body>
+</html>
