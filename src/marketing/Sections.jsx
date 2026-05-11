@@ -202,7 +202,7 @@ const SectionResults = () => {
 
       {/* Bear peeks out from behind the metrics row, brass-tinted to match
           the same hairline language as the grid below it. */}
-      <Bear src="/assets/bears/bear-01.svg" side="left" size={440} />
+      <Bear src={`${import.meta.env.BASE_URL}assets/bears/bear-01.svg`} side="left" size={440} />
 
       <div className="mk-results-grid">
         {RESULTS.map((r, i) => <ResultsMetric key={i} {...r} />)}
@@ -273,11 +273,11 @@ const SectionGrowth = () => {
       <div className="mk-growth-chart">
         {/* Salad bear sits behind the chart, its bottom edge meeting the
             chart's first horizontal grid line (25% down). */}
-        <Bear src="/assets/bears/bear-03.svg" side="left" size={440} anchor="chart" />
+        <Bear src={`${import.meta.env.BASE_URL}assets/bears/bear-03.svg`} side="left" size={440} anchor="chart" />
         <svg
           className="mk-growth-svg"
           viewBox="0 0 1000 400"
-          preserveAspectRatio="none"
+          preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
           {/* Grid lines — solid faint hairlines that draw in left-to-right.
@@ -423,7 +423,7 @@ const SectionCompare = () => (
 
     {/* Dessert bear peeks out from behind the comparison table on the
         right — flips the side to balance the row of three bears. */}
-    <Bear src="/assets/bears/bear-cake.svg" side="right" size={440} />
+    <Bear src={`${import.meta.env.BASE_URL}assets/bears/bear-cake.svg`} side="right" size={440} />
 
     <div className="mk-compare" role="table">
       <div className="mk-compare-row mk-compare-head-row" role="row">

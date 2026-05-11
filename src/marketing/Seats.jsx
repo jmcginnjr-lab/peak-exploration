@@ -159,7 +159,7 @@ const Seats = ({ stage = 0, showRestaurant = false }) => (
   >
     <div className="mk-seats-inner">
       <div className="mk-seats-mark" aria-hidden="true">
-        <img src="/assets/logos/peak-mark-gold.svg" alt="" />
+        <img src={`${import.meta.env.BASE_URL}assets/logos/peak-mark-gold.svg`} alt="" />
       </div>
       <h2 className="mk-seats-h">Unlock the value of your seats.</h2>
       <p className="mk-seats-sub">

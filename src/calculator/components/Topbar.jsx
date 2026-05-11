@@ -19,7 +19,7 @@ const Topbar = () => {
   return (
     <div className="cal-topbar">
       <div className="cal-lockup">
-        <img src="/assets/logos/peak-lockup-new.svg" alt="peak"/>
+        <img src={`${import.meta.env.BASE_URL}assets/logos/peak-lockup-new.svg`} alt="peak"/>
       </div>
       <div className="cal-topbar-right">
         <span className="cal-pill">

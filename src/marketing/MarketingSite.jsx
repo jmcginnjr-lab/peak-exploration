@@ -221,7 +221,7 @@ const Nav = () => {
       <div className="mk-nav-inner">
         <a href="#top" className="mk-brand">
           <img
-            src="/assets/logos/peak-logotype-new.svg"
+            src={`${import.meta.env.BASE_URL}assets/logos/peak-logotype-new.svg`}
             alt="Peak"
             className="mk-logo"
           />
@@ -237,7 +237,7 @@ const Nav = () => {
 
 const Hero = () => (
   <header className="mk-hero" id="top">
-    <LoopVideo src="/assets/videos/video-2.mp4" className="mk-hero-bg"/>
+    <LoopVideo src={`${import.meta.env.BASE_URL}assets/videos/video-2.mp4`} className="mk-hero-bg"/>
     <div className="mk-hero-scrim"/>
     <div className="mk-hero-inner">
       <div className="pk-eyebrow">A platform for restaurants that demand excellence</div>
@@ -477,13 +477,13 @@ const Footer = () => {
     <>
       <div className="mk-footer-spacer" aria-hidden="true" ref={spacerRef}/>
       <footer className="mk-footer" style={{ '--reveal-p': p }}>
-        <img src="/assets/photos/skyline.jpeg" alt="" className="mk-footer-bg"/>
+        <img src={`${import.meta.env.BASE_URL}assets/photos/skyline.jpeg`} alt="" className="mk-footer-bg"/>
         <div className="mk-footer-scrim" aria-hidden="true"/>
         {/* Three direct children — logo at top, pill auto-margined to the
             vertical center between the logo bottom and the fineprint top,
             fineprint anchored to the bottom of the viewport. No tagline. */}
         <img
-          src="/assets/logos/peak-logotype-new.svg"
+          src={`${import.meta.env.BASE_URL}assets/logos/peak-logotype-new.svg`}
           alt="Peak"
           className="mk-footer-logo"
         />
