@@ -1,0 +1,1284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>peak · earnings calculator</title>
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: var(--fs-base);
+    line-height: var(--lh-body);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; cursor: pointer; }
+
+  /* ──────────────────────────────────────────────────────────
+     Layout shell
+     ────────────────────────────────────────────────────────── */
+  .shell {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 32px 40px 64px;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+    gap: 24px;
+  }
+  .lockup img { height: 26px; width: auto; display: block; }
+  .topbar-right {
+    display: flex; align-items: center; gap: 18px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--fg-subtle); letter-spacing: 0.08em;
+  }
+  .topbar-right .pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--fg-muted); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.12em;
+  }
+  .topbar-right .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--peak-success); box-shadow: 0 0 8px rgba(107,142,90,0.55); display: inline-block; }
+
+  /* PAGE TITLE */
+  .page-title-row {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 32px; gap: 32px;
+  }
+  .page-eyebrow {
+    font-size: 11px; font-weight: 500;
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+    color: var(--accent); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .page-eyebrow .rule { width: 32px; height: 1px; background: var(--accent); display: inline-block; }
+  .page-h {
+    font-family: var(--font-display);
+    font-size: 42px; font-weight: 500;
+    letter-spacing: -0.02em; line-height: 1.05;
+    margin: 0; color: var(--fg);
+    max-width: 720px; text-wrap: balance;
+  }
+  .page-h em { font-style: normal; color: var(--accent); }
+  .page-sub {
+    font-size: 13px; color: var(--fg-muted);
+    max-width: 340px; text-align: right;
+    line-height: 1.5;
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     Unified canvas: controls (left) + results (right)
+     One continuous surface, hairline divider between.
+     ────────────────────────────────────────────────────────── */
+  .canvas {
+    --controls-bg: #0F1C18;   /* lighter than --bg (#0E1A16), darker than chart area (#12221D) */
+    --controls-w: 400px;
+    background:
+      linear-gradient(to right,
+        var(--controls-bg) 0,
+        var(--controls-bg) var(--controls-w),
+        var(--border) var(--controls-w),
+        var(--border) calc(var(--controls-w) + 1px),
+        var(--bg-elev) calc(var(--controls-w) + 1px),
+        var(--bg-elev) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    display: grid;
+    grid-template-columns: minmax(0, var(--controls-w)) 1px minmax(0, 1fr);
+    overflow: hidden;
+  }
+  .canvas-divider { background: transparent; }
+
+  /* CONTROLS COL — fills the column via canvas gradient; recedes visually */
+  .controls {
+    padding: 32px 40px 36px;
+    min-width: 0;
+    background: transparent;
+    display: flex; flex-direction: column; gap: 22px;
+    position: sticky; top: 0;
+    align-self: start;
+  }
+
+  .group-eyebrow {
+    font-size: 10px; font-weight: 500;
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+    color: var(--fg-muted);
+    margin: 0 0 4px;
+  }
+  .group-eyebrow .count { display: none; }
+  .group-eyebrow .rule { display: none; }
+
+  /* Lookup row */
+  .lookup-eyebrow {
+    font-size: 10px; font-weight: 500;
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+    color: var(--accent); margin-bottom: 10px;
+  }
+  .lookup-field {
+    display: flex; gap: 8px; align-items: stretch;
+    min-width: 0;
+  }
+  .lookup-field input {
+    flex: 1; min-width: 0; width: 100%;
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0 12px; height: 38px;
+    color: var(--fg); font-family: var(--font-sans); font-size: 13.5px;
+    outline: none; transition: border-color 140ms;
+  }
+  .lookup-field input:focus { border-color: var(--accent); }
+  .lookup-field input::placeholder { color: var(--fg-subtle); }
+  .lookup-field button {
+    height: 38px; padding: 0 14px;
+    background: var(--accent); color: var(--fg-on-brass);
+    border: 0; border-radius: var(--radius-md);
+    font-size: 12.5px; font-weight: 600;
+    letter-spacing: 0.01em; white-space: nowrap;
+    transition: background 140ms;
+  }
+  .lookup-field button:hover { background: var(--accent-hover); }
+  .lookup-field button:disabled { opacity: 0.5; cursor: default; }
+  .lookup-status {
+    font-family: var(--font-mono); font-size: 10.5px;
+    color: var(--fg-subtle); letter-spacing: 0.04em;
+    margin-top: 8px; min-height: 14px;
+  }
+  .lookup-status.loading { color: var(--peak-info); }
+  .lookup-status.done    { color: var(--peak-success); }
+
+  /* ── SLIDER CONTROL ── */
+  .control {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    column-gap: 12px;
+    row-gap: 8px;
+    align-items: center;
+    padding: 12px 0;
+    transition: background 140ms;
+    position: relative;
+  }
+  .control + .control { border-top: 1px solid var(--divider); }
+  .control:focus-within::before {
+    content: ''; position: absolute; left: -28px; top: 8px; bottom: 8px;
+    width: 2px; background: var(--accent); border-radius: 2px;
+  }
+
+  .control-label {
+    grid-column: 1;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--fg-muted);
+    min-width: 0;
+  }
+  .control-label .name { min-width: 0; }
+
+  .control-value {
+    grid-column: 2; grid-row: 1;
+    display: flex; align-items: baseline; gap: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .control-value input {
+    width: 64px; text-align: right;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 2px 6px;
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: 17px; font-weight: 600;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    outline: none;
+    transition: border-color 140ms, background 140ms;
+    -moz-appearance: textfield;
+  }
+  .control-value input::-webkit-outer-spin-button,
+  .control-value input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .control-value input:hover { border-color: var(--border); }
+  .control-value input:focus { border-color: var(--accent); background: var(--bg-inset); }
+  .control-value .unit {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--fg-subtle); letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .control-value .currency {
+    color: var(--fg-subtle); font-size: 13px; font-weight: 500; margin-right: -2px;
+  }
+
+  /* Slider row */
+  .control-slider {
+    grid-column: 1 / -1; grid-row: 2;
+    position: relative; height: 22px;
+    display: flex; align-items: center;
+  }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; background: transparent; height: 22px;
+    margin: 0; padding: 0; outline: none;
+  }
+  /* Track */
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 3px; border-radius: 2px;
+    background: linear-gradient(to right,
+      var(--accent) 0%, var(--accent) var(--fill, 0%),
+      var(--bg-inset) var(--fill, 0%), var(--bg-inset) 100%);
+    border: 1px solid var(--border);
+  }
+  input[type="range"]::-moz-range-track {
+    height: 3px; border-radius: 2px;
+    background: var(--bg-inset); border: 1px solid var(--border);
+  }
+  input[type="range"]::-moz-range-progress {
+    height: 3px; border-radius: 2px; background: var(--accent);
+  }
+  /* Thumb */
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 16px; height: 16px; border-radius: 999px;
+    background: var(--peak-bone-50); border: 2px solid var(--accent);
+    margin-top: -7px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    cursor: grab; transition: transform 140ms, border-color 140ms;
+  }
+  input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.15); cursor: grabbing; }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px; border-radius: 999px;
+    background: var(--peak-bone-50); border: 2px solid var(--accent);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4); cursor: grab;
+  }
+  input[type="range"]:focus::-webkit-slider-thumb { box-shadow: 0 0 0 4px rgba(201,166,113,0.18), 0 1px 3px rgba(0,0,0,0.4); }
+
+  /* Compact badge sits inline with the label */
+  .control-label .badge {
+    font-size: 9px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 1px 5px; border-radius: 3px; line-height: 1.3;
+  }
+  .control-label .badge.est {
+    color: var(--peak-warning);
+    background: rgba(194,146,68,0.10);
+    border: 1px solid rgba(194,146,68,0.22);
+  }
+  .control-label .badge.auto {
+    color: var(--peak-success);
+    background: rgba(107,142,90,0.12);
+    border: 1px solid rgba(107,142,90,0.25);
+  }
+  .control-meta {
+    display: none;
+  }
+  .control-meta .badge {
+    font-size: 9px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 1px 5px; border-radius: 3px; line-height: 1.3;
+  }
+  .control-meta .badge.est {
+    color: var(--peak-warning);
+    background: rgba(194,146,68,0.12);
+    border: 1px solid rgba(194,146,68,0.25);
+  }
+  .control-meta .badge.auto {
+    color: var(--peak-success);
+    background: rgba(107,142,90,0.14);
+    border: 1px solid rgba(107,142,90,0.28);
+  }
+
+  .controls-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 14px; border-top: 1px solid var(--divider);
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--fg-subtle); letter-spacing: 0.06em;
+  }
+  .btn-ghost {
+    height: 30px; padding: 0 12px;
+    background: transparent; color: var(--fg-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.04em;
+    transition: all 140ms;
+  }
+  .btn-ghost:hover { color: var(--fg); border-color: var(--border-strong); background: rgba(201,166,113,0.04); }
+
+  /* ──────────────────────────────────────────────────────────
+     RESULTS (right column)
+     ────────────────────────────────────────────────────────── */
+  .results {
+    padding: 32px 44px 36px;
+    min-width: 0;
+    display: flex; flex-direction: column;
+  }
+
+  .res-section {
+    padding: 22px 0;
+    border-top: 1px solid var(--divider);
+  }
+  .res-section:first-child {
+    padding-top: 0; border-top: 0;
+  }
+  .res-section-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 18px; gap: 16px;
+  }
+  .res-section-head h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 22px; font-weight: 500; letter-spacing: -0.01em;
+    color: var(--fg);
+  }
+  .res-section-head h3 em { font-style: normal; color: var(--accent); }
+  .res-section-head .note {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--fg-subtle); letter-spacing: 0.1em; text-transform: uppercase;
+    text-align: right;
+  }
+
+  /* Suggestion chips — multi-control shortcuts */
+  .suggest-row {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 18px;
+  }
+  .suggest-chip {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--fg-muted);
+    border-radius: 999px;
+    padding: 5px 11px;
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.02em;
+    transition: all 140ms;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .suggest-chip:hover {
+    color: var(--accent); border-color: rgba(201,166,113,0.32);
+    background: rgba(201,166,113,0.04);
+  }
+  .suggest-chip .glyph {
+    font-family: var(--font-mono); color: var(--fg-subtle);
+    font-size: 10px; letter-spacing: 0;
+  }
+  .suggest-chip:hover .glyph { color: var(--accent); }
+
+  /* Annual block */
+  .annual {
+    display: grid; grid-template-columns: 1.4fr 1fr;
+    gap: 28px; align-items: stretch;
+    min-width: 0;
+  }
+  .annual-range { min-width: 0; }
+  .ar-eyebrow {
+    font-size: 10px; font-weight: 500;
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+    color: var(--accent); margin-bottom: 14px;
+  }
+  .ar-nums {
+    display: flex; align-items: baseline; gap: 14px;
+    margin-bottom: 18px; flex-wrap: wrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .ar-num {
+    font-family: var(--font-display);
+    font-size: 44px; font-weight: 500;
+    letter-spacing: -0.025em; line-height: 1;
+    color: var(--fg);
+  }
+  .ar-num.lo { color: var(--fg-muted); font-size: 28px; }
+  .ar-dash { color: var(--fg-subtle); font-size: 22px; }
+  .ar-bar-ticks {
+    display: flex; justify-content: space-between;
+    font-family: var(--font-mono); font-size: 9.5px;
+    color: var(--fg-subtle); letter-spacing: 0.08em;
+    margin-bottom: 8px; text-transform: uppercase;
+  }
+  .ar-bar {
+    position: relative; height: 8px; border-radius: 999px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    overflow: visible;
+    margin-bottom: 14px;
+  }
+  .ar-bar-fill {
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, var(--peak-brass-600) 0%, var(--peak-brass-400) 60%, var(--peak-brass-300) 100%);
+    border-radius: 999px;
+  }
+  .ar-bar-mid {
+    position: absolute; top: -4px; bottom: -4px; left: 50%;
+    width: 2px; background: var(--fg); transform: translateX(-50%);
+    border-radius: 1px;
+  }
+  .ar-bar-mid::after {
+    content: ""; position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
+    width: 10px; height: 10px; border-radius: 999px;
+    background: var(--fg); border: 2px solid var(--bg-elev);
+  }
+  .ar-foot {
+    font-size: 12.5px; color: var(--fg-muted);
+    line-height: 1.55;
+  }
+  .ar-foot strong { color: var(--fg); font-weight: 500; }
+
+  .annual-stats {
+    display: flex; flex-direction: column;
+    padding-left: 24px;
+    justify-content: center;
+    gap: 18px;
+    min-width: 0;
+  }
+  .ast {
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .ast .k {
+    font-size: 10px; font-weight: 500;
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+  .ast .v {
+    font-family: var(--font-display);
+    font-size: 22px; font-weight: 500;
+    color: var(--fg); letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .ast .s { font-size: 11px; color: var(--fg-subtle); font-family: var(--font-mono); letter-spacing: 0.04em; }
+
+  /* Projection block */
+  .proj-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 28px;
+    min-width: 0;
+  }
+  .proj-chart-wrap {
+    min-width: 0;
+    display: flex; flex-direction: column;
+  }
+  .proj-chart-legend {
+    display: flex; gap: 16px;
+    margin-bottom: 10px;
+    font-family: var(--font-mono); font-size: 9.5px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-swatch { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+  .legend-swatch.flat   { background: var(--peak-slate-500); }
+  .legend-swatch.growth { background: var(--accent); }
+  .legend-swatch.index  { background: var(--peak-info); }
+
+  .chart-svg {
+    width: 100%; display: block;
+    background: transparent;
+    height: 240px;
+    transition: filter 220ms;
+  }
+
+  .proj-cards { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .proj-card {
+    padding: 4px 0 14px 14px;
+    border: 0;
+    border-left: 2px solid;
+    display: flex; flex-direction: column; gap: 3px;
+    min-width: 0;
+  }
+  .proj-card.flat   { border-left-color: var(--peak-slate-500); }
+  .proj-card.growth { border-left-color: var(--accent); }
+  .proj-card.index  { border-left-color: var(--peak-info); }
+
+  .pc-label {
+    font-size: 9.5px; font-weight: 500;
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+  .pc-val {
+    font-family: var(--font-display);
+    font-size: 24px; font-weight: 500;
+    color: var(--fg); letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums; line-height: 1.1;
+  }
+  .pc-sub { font-size: 11px; color: var(--fg-subtle); font-family: var(--font-mono); letter-spacing: 0.02em; }
+  .proj-card.growth .pc-val { color: var(--accent); }
+
+  /* Update flash */
+  .flash {
+    animation: flash 280ms var(--ease-out, ease-out);
+  }
+  @keyframes flash {
+    0%   { color: var(--accent); }
+    100% { color: inherit; }
+  }
+  .proj-card.growth .pc-val.flash {
+    animation: flash-growth 280ms ease-out;
+  }
+  @keyframes flash-growth {
+    0%   { color: var(--peak-brass-300); }
+    100% { color: var(--accent); }
+  }
+
+  /* Footer */
+  .foot-note {
+    margin-top: 24px; padding-top: 18px;
+    border-top: 1px solid var(--divider);
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--fg-subtle); letter-spacing: 0.08em; text-transform: uppercase;
+    display: flex; justify-content: space-between; gap: 24px;
+  }
+
+  .placeholder { color: var(--fg-subtle); }
+
+  @media (max-width: 1080px) {
+    .shell { padding: 20px 16px 48px; }
+    .canvas {
+      grid-template-columns: 1fr;
+      background: var(--bg-elev);
+    }
+    .canvas-divider { width: 100%; height: 1px; background: var(--border); }
+    .controls {
+      position: static;
+      background: var(--controls-bg);
+      padding: 24px 24px 28px;
+    }
+    .results { padding: 24px 24px 32px; }
+    .annual { grid-template-columns: 1fr; }
+    .annual-stats { border-left: 0; border-top: 1px solid var(--divider); padding-left: 0; padding-top: 18px; }
+    .proj-grid { grid-template-columns: 1fr; }
+    .topbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .page-title-row { grid-template-columns: 1fr; gap: 16px; }
+  }
+  @media (max-width: 560px) {
+    .controls { padding: 20px 18px 24px; }
+    .results { padding: 20px 18px 28px; }
+    .lookup-row { flex-wrap: wrap; }
+    .annual { gap: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="lockup">
+      <img src="assets/logos/peak-lockup-new.svg" alt="peak">
+    </div>
+    <div class="topbar-right">
+      <span class="pill"><span class="dot"></span>Internal · sales</span>
+      <span id="ts">—</span>
+    </div>
+  </div>
+
+  <!-- TITLE -->
+  <div class="page-title-row">
+    <div>
+      <div class="page-eyebrow"><span class="rule"></span><span>Earnings calculator</span></div>
+      <h1 class="page-h">What this restaurant is leaving on the table.</h1>
+    </div>
+    <div class="page-sub">
+      Drag the controls. Every number on the right updates live — annual earnings, three- and ten-year projections, and the index alternative.
+    </div>
+  </div>
+
+  <!-- UNIFIED CANVAS -->
+  <div class="canvas">
+
+    <!-- CONTROLS -->
+    <aside class="controls" id="controls">
+
+      <div>
+        <div class="lookup-eyebrow">Restaurant</div>
+        <div class="lookup-field">
+          <input type="text" id="restaurantUrl" placeholder="e.g. Norma's Palm Springs">
+          <button type="button" id="lookupBtn">Look up</button>
+        </div>
+        <div class="lookup-status" id="lookupStatus">Press look up to populate hours &amp; capacity.</div>
+      </div>
+
+      <div>
+        <div class="group-eyebrow"><span>Capacity</span><span class="count">01</span><span class="rule"></span></div>
+
+        <div class="control" data-field="totalTables">
+          <div class="control-label"><span class="name">Total tables</span><span class="badge est" data-badge="totalTables">est</span></div>
+          <div class="control-value">
+            <input type="number" id="totalTables" min="0" max="200" step="1">
+          </div>
+          <div class="control-slider">
+            <input type="range" id="totalTables_slider" min="0" max="120" step="1">
+          </div>
+          </div>
+
+        <div class="control" data-field="totalSeats">
+          <div class="control-label"><span class="name">Total seats</span><span class="badge est" data-badge="totalSeats">est</span></div>
+          <div class="control-value">
+            <input type="number" id="totalSeats" min="0" max="800" step="1">
+          </div>
+          <div class="control-slider">
+            <input type="range" id="totalSeats_slider" min="0" max="500" step="5">
+          </div>
+          <div class="control-meta">
+            <span>0 – 500</span>
+            <span class="badge est" data-badge="totalSeats">est</span>
+          </div>
+        </div>
+
+        <div class="control" data-field="priceableTables">
+          <div class="control-label"><span class="name">Priceable tables</span><span class="badge est" data-badge="priceableTables">est</span></div>
+          <div class="control-value">
+            <input type="number" id="priceableTables" min="0" max="200" step="1">
+          </div>
+          <div class="control-slider">
+            <input type="range" id="priceableTables_slider" min="0" max="120" step="1">
+          </div>
+          <div class="control-meta">
+            <span>Subset Peak will price</span>
+            <span class="badge est" data-badge="priceableTables">est</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="group-eyebrow"><span>Service</span><span class="count">02</span><span class="rule"></span></div>
+
+        <div class="control" data-field="daysOpen">
+          <div class="control-label"><span class="name">Days open / wk</span><span class="badge auto" data-badge="daysOpen">auto</span></div>
+          <div class="control-value">
+            <input type="number" id="daysOpen" min="0" max="7" step="1">
+          </div>
+          <div class="control-slider">
+            <input type="range" id="daysOpen_slider" min="1" max="7" step="1">
+          </div>
+          </div>
+
+        <div class="control" data-field="turnsPerDay">
+          <div class="control-label"><span class="name">Turns / day</span><span class="badge est" data-badge="turnsPerDay">est</span></div>
+          <div class="control-value">
+            <input type="number" id="turnsPerDay" min="0" max="6" step="0.5">
+          </div>
+          <div class="control-slider">
+            <input type="range" id="turnsPerDay_slider" min="0" max="6" step="0.5">
+          </div>
+          <div class="control-meta">
+            <span>0 – 6 turns</span>
+            <span class="badge est" data-badge="turnsPerDay">est</span>
+          </div>
+        </div>
+
+        <div class="control" data-field="daysClosed">
+          <div class="control-label"><span class="name">Days closed / yr</span><span class="badge est" data-badge="daysClosed">est</span></div>
+          <div class="control-value">
+            <input type="number" id="daysClosed" min="0" max="120" step="1">
+          </div>
+          <div class="control-slider">
+            <input type="range" id="daysClosed_slider" min="0" max="60" step="1">
+          </div>
+          <div class="control-meta">
+            <span>Holidays + closures</span>
+            <span class="badge est" data-badge="daysClosed">est</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="group-eyebrow"><span>Spend</span><span class="count">03</span><span class="rule"></span></div>
+
+        <div class="control" data-field="avgSpend">
+          <div class="control-label"><span class="name">Avg spend / person</span><span class="badge est" data-badge="avgSpend">est</span></div>
+          <div class="control-value">
+            <span class="currency">$</span>
+            <input type="number" id="avgSpend" min="0" max="500" step="1">
+          </div>
+          <div class="control-slider">
+            <input type="range" id="avgSpend_slider" min="0" max="350" step="5">
+          </div>
+          </div>
+      </div>
+
+      <div>
+        <div class="group-eyebrow">Quick scenarios</div>
+        <div class="suggest-row">
+          <button type="button" class="suggest-chip" data-preset="busyNight"><span class="glyph">+</span>Busy night service</button>
+          <button type="button" class="suggest-chip" data-preset="primeOnly"><span class="glyph">~</span>Prime tables only</button>
+          <button type="button" class="suggest-chip" data-preset="weekendCrush"><span class="glyph">↑</span>Weekend crush</button>
+          <button type="button" class="suggest-chip" data-preset="tastingRoom"><span class="glyph">$</span>Tasting menu</button>
+          <button type="button" class="suggest-chip" data-preset="sixDay"><span class="glyph">−</span>Closed Mondays</button>
+        </div>
+      </div>
+
+      <div class="controls-foot">
+        <span>Live · updates as you drag</span>
+        <button type="button" class="btn-ghost" id="resetBtn">Reset sample</button>
+      </div>
+    </aside>
+
+    <div class="canvas-divider"></div>
+
+    <!-- RESULTS -->
+    <main class="results">
+
+      <!-- ANNUAL -->
+      <section class="res-section">
+        <div class="res-section-head">
+          <h3>Annual <em>earnings on Peak</em></h3>
+          <div class="note">After Peak fee · 5%–30%</div>
+        </div>
+
+        <div class="annual">
+          <div class="annual-range">
+            <div class="ar-eyebrow">Restaurant keeps · per year</div>
+            <div class="ar-nums">
+              <span class="ar-num lo" id="r-netLo">—</span>
+              <span class="ar-dash">→</span>
+              <span class="ar-num" id="r-netHi">—</span>
+            </div>
+            <div class="ar-bar-ticks">
+              <span>5% fee</span>
+              <span>17.5% midpoint</span>
+              <span>30% fee</span>
+            </div>
+            <div class="ar-bar">
+              <div class="ar-bar-fill"></div>
+              <div class="ar-bar-mid"></div>
+            </div>
+            <div class="ar-foot" id="r-netSub">Fill in priceable tables and avg spend to see results.</div>
+          </div>
+
+          <div class="annual-stats">
+            <div class="ast">
+              <span class="k">Avg table price</span>
+              <span class="v" id="r-tablePrice">—</span>
+              <span class="s">22.5% of avg spend</span>
+            </div>
+            <div class="ast">
+              <span class="k">Operating days / yr</span>
+              <span class="v" id="r-opDays">—</span>
+              <span class="s" id="r-opDaysSub">—</span>
+            </div>
+            <div class="ast">
+              <span class="k">Priceable share</span>
+              <span class="v" id="r-pricedPct">—</span>
+              <span class="s" id="r-pricedSub">of total tables</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3 YEAR -->
+      <section class="res-section">
+        <div class="res-section-head">
+          <h3>3-year view</h3>
+          <div class="note">OpenTable &amp; Resy minimum contract</div>
+        </div>
+        <div class="proj-grid">
+          <div class="proj-chart-wrap">
+            <div class="proj-chart-legend">
+              <span class="legend-item"><span class="legend-swatch flat"></span>No growth</span>
+              <span class="legend-item"><span class="legend-swatch growth"></span>Decelerating growth</span>
+              <span class="legend-item"><span class="legend-swatch index"></span>S&amp;P reinvest</span>
+            </div>
+            <svg class="chart-svg" id="chart3" viewBox="0 0 400 240" preserveAspectRatio="none"></svg>
+          </div>
+          <div class="proj-cards">
+            <div class="proj-card flat">
+              <span class="pc-label">No growth</span>
+              <span class="pc-val" id="r3-flat">—</span>
+              <span class="pc-sub" id="r3-flatSub">Restaurant earnings × 3</span>
+            </div>
+            <div class="proj-card growth">
+              <span class="pc-label">Decelerating growth</span>
+              <span class="pc-val" id="r3-growth">—</span>
+              <span class="pc-sub" id="r3-growthSub">15% → 11% → 8%</span>
+            </div>
+            <div class="proj-card index">
+              <span class="pc-label">If invested in S&amp;P 500 · 10% / yr</span>
+              <span class="pc-val" id="r3-index">—</span>
+              <span class="pc-sub" id="r3-indexSub">Each year reinvested at 10%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10 YEAR -->
+      <section class="res-section">
+        <div class="res-section-head">
+          <h3>10-year view</h3>
+          <div class="note">Long-term compounding</div>
+        </div>
+        <div class="proj-grid">
+          <div class="proj-chart-wrap">
+            <div class="proj-chart-legend">
+              <span class="legend-item"><span class="legend-swatch flat"></span>No growth</span>
+              <span class="legend-item"><span class="legend-swatch growth"></span>Decelerating growth</span>
+              <span class="legend-item"><span class="legend-swatch index"></span>S&amp;P reinvest</span>
+            </div>
+            <svg class="chart-svg" id="chart10" viewBox="0 0 400 240" preserveAspectRatio="none"></svg>
+          </div>
+          <div class="proj-cards">
+            <div class="proj-card flat">
+              <span class="pc-label">No growth</span>
+              <span class="pc-val" id="r10-flat">—</span>
+              <span class="pc-sub" id="r10-flatSub">Restaurant earnings × 10</span>
+            </div>
+            <div class="proj-card growth">
+              <span class="pc-label">Decelerating growth</span>
+              <span class="pc-val" id="r10-growth">—</span>
+              <span class="pc-sub" id="r10-growthSub">15% tapering to 3%</span>
+            </div>
+            <div class="proj-card index">
+              <span class="pc-label">If invested in S&amp;P 500 · 10% / yr</span>
+              <span class="pc-val" id="r10-index">—</span>
+              <span class="pc-sub" id="r10-indexSub">Each year reinvested at 10%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="foot-note">
+        <span>Modeled at 17.5% Peak midpoint fee</span>
+        <span id="modelMeta">Sample · Halls Chophouse</span>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+/* ──────────────────────────────────────────────────────────
+   PEAK DATA — sample (replace this object to ingest real data)
+   ────────────────────────────────────────────────────────── */
+const PEAK_DATA = {
+  restaurant:      "Halls Chophouse, Charleston SC",
+  totalTables:     40,
+  totalSeats:      160,
+  priceableTables: 28,
+  avgSpend:        140,
+  daysOpen:        7,
+  turnsPerDay:     2,
+  daysClosed:      8,
+  badges: {
+    daysOpen: "auto",
+    totalTables: "est",
+    totalSeats: "est",
+    turnsPerDay: "est",
+    daysClosed: "est",
+    priceableTables: "est",
+    avgSpend: "est",
+  }
+};
+
+const FIELDS = ['totalTables','totalSeats','priceableTables','avgSpend','daysOpen','turnsPerDay','daysClosed'];
+
+/* ── Math ── */
+function fmt(n) {
+  if (!isFinite(n) || n === 0) return '$0';
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+function fmtShort(n) {
+  if (!isFinite(n)) return '—';
+  if (n >= 1e6) return '$' + (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + Math.round(n/1e3) + 'K';
+  return '$' + Math.round(n);
+}
+function growthRate(y) { return Math.max(0.03, 0.15 * Math.pow(0.75, y)); }
+
+function project(base, years) {
+  let flat = base * years;
+  let growth = 0;
+  let yr = base;
+  const yVals = [];
+  for (let i = 0; i < years; i++) {
+    growth += yr;
+    yVals.push(yr);
+    yr *= (1 + growthRate(i));
+  }
+  let idx = 0;
+  for (let j = 0; j < years; j++) {
+    idx = (idx + yVals[j]) * (j < years - 1 ? 1.10 : 1);
+  }
+  return { flat, growth, index: idx, yr1: base, yrN: yVals[years - 1], yVals };
+}
+function projectionSeries(base, years) {
+  const flatS = [], growthS = [], indexS = [];
+  let yr = base, growthAccum = 0, idxAccum = 0;
+  for (let i = 0; i < years; i++) {
+    flatS.push(base * (i + 1));
+    growthAccum += yr;
+    growthS.push(growthAccum);
+    idxAccum = (idxAccum + yr) * (i < years - 1 ? 1.10 : 1);
+    indexS.push(idxAccum);
+    yr *= (1 + growthRate(i));
+  }
+  return { flat: flatS, growth: growthS, index: indexS };
+}
+function niceCeil(n) {
+  if (n <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(n)));
+  const norm = n / mag;
+  let nice;
+  if (norm <= 1) nice = 1;
+  else if (norm <= 2) nice = 2;
+  else if (norm <= 2.5) nice = 2.5;
+  else if (norm <= 5) nice = 5;
+  else nice = 10;
+  return nice * mag;
+}
+
+/* ── Chart renderer ── */
+const _chartState = {};
+const CHART_ANIM_MS = 480;
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+function tweenSeries(from, to, t) {
+  const out = {};
+  for (const k of Object.keys(to)) {
+    out[k] = to[k].map((v, i) => {
+      const fv = (from && from[k] && from[k][i] !== undefined) ? from[k][i] : 0;
+      return fv + (v - fv) * t;
+    });
+  }
+  return out;
+}
+function renderChart(svgId, series, years) {
+  const state = _chartState[svgId] || (_chartState[svgId] = { current: null, raf: null, start: 0, from: null, to: null });
+  if (state.raf) cancelAnimationFrame(state.raf);
+  state.from = state.current ? JSON.parse(JSON.stringify(state.current)) : { flat: series.flat.map(()=>0), growth: series.growth.map(()=>0), index: series.index.map(()=>0) };
+  state.to = series;
+  state.start = performance.now();
+  const step = (now) => {
+    const elapsed = now - state.start;
+    const t = Math.min(1, elapsed / CHART_ANIM_MS);
+    const eased = easeOutCubic(t);
+    const interp = tweenSeries(state.from, state.to, eased);
+    state.current = interp;
+    drawChart(svgId, interp, years);
+    if (t < 1) state.raf = requestAnimationFrame(step);
+    else state.raf = null;
+  };
+  state.raf = requestAnimationFrame(step);
+}
+function drawChart(svgId, series, years) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  const W = 400, H = 240;
+  const padL = 42, padR = 14, padT = 14, padB = 26;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+
+  const hasData = series.flat.some(v => v > 0);
+  if (!hasData) {
+    svg.innerHTML =
+      '<g font-family="var(--font-mono)" font-size="10" fill="var(--fg-subtle)" letter-spacing="0.08em">' +
+      '<text x="' + (W/2) + '" y="' + (H/2) + '" text-anchor="middle">AWAITING INPUTS</text></g>';
+    return;
+  }
+
+  const maxVal = Math.max(
+    series.flat[series.flat.length-1],
+    series.growth[series.growth.length-1],
+    series.index[series.index.length-1]
+  );
+  const niceMax = niceCeil(maxVal);
+
+  const xFor = (i) => padL + (years === 1 ? innerW/2 : (i / (years - 1)) * innerW);
+  const yFor = (v) => padT + innerH - (v / niceMax) * innerH;
+
+  const buildPath = (vals) => vals.map((v, i) => (i === 0 ? 'M' : 'L') + xFor(i).toFixed(1) + ',' + yFor(v).toFixed(1)).join(' ');
+  const buildArea = (vals) => buildPath(vals) + ' L ' + xFor(years-1).toFixed(1) + ',' + (padT+innerH).toFixed(1) + ' L ' + xFor(0).toFixed(1) + ',' + (padT+innerH).toFixed(1) + ' Z';
+
+  const yTicks = [0, niceMax/2, niceMax];
+  const yTickLines = yTicks.map(t => {
+    const y = yFor(t);
+    return '<line x1="' + padL + '" x2="' + (W-padR) + '" y1="' + y + '" y2="' + y + '" stroke="rgba(201,166,113,0.05)" stroke-width="1"/>' +
+           '<text x="' + (padL-8) + '" y="' + (y+3) + '" text-anchor="end" font-family="var(--font-mono)" font-size="9" fill="var(--fg-subtle)" letter-spacing="0.04em">' + fmtShort(t) + '</text>';
+  }).join('');
+
+  const xLabels = years <= 3
+    ? Array.from({length: years}, (_, i) => i)
+    : [0, Math.floor(years/2), years-1];
+  const xTickText = xLabels.map(i =>
+    '<text x="' + xFor(i) + '" y="' + (H-8) + '" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--fg-subtle)" letter-spacing="0.04em">Y' + (i+1) + '</text>'
+  ).join('');
+
+  // dot at end for each series
+  const dot = (vals, color, r) => {
+    const i = vals.length - 1;
+    return '<circle cx="' + xFor(i) + '" cy="' + yFor(vals[i]) + '" r="' + r + '" fill="' + color + '" stroke="var(--bg-inset)" stroke-width="1.5"/>';
+  };
+
+  svg.innerHTML =
+    '<defs>' +
+      '<linearGradient id="growthFill-' + svgId + '" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="rgba(201,166,113,0.22)"/>' +
+        '<stop offset="100%" stop-color="rgba(201,166,113,0)"/>' +
+      '</linearGradient>' +
+    '</defs>' +
+    yTickLines +
+    xTickText +
+    '<path d="' + buildArea(series.growth) + '" fill="url(#growthFill-' + svgId + ')"/>' +
+    '<path d="' + buildPath(series.flat)   + '" fill="none" stroke="var(--peak-slate-500)" stroke-width="1.5"/>' +
+    '<path d="' + buildPath(series.index)  + '" fill="none" stroke="var(--peak-info)" stroke-width="1.5" stroke-dasharray="3 3"/>' +
+    '<path d="' + buildPath(series.growth) + '" fill="none" stroke="var(--peak-brass-400)" stroke-width="2"/>' +
+    dot(series.flat,   'var(--peak-slate-500)', 3) +
+    dot(series.index,  'var(--peak-info)',      3) +
+    dot(series.growth, 'var(--peak-brass-400)', 4);
+}
+
+/* ── Calc + render ── */
+const _prev = {};
+function setVal(id, txt, opts) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const isPlaceholder = (txt === '—' || txt === '');
+  if (el.textContent !== txt) {
+    el.textContent = txt;
+    if (!isPlaceholder && opts && opts.flash && _prev[id] !== undefined && _prev[id] !== txt) {
+      el.classList.remove('flash');
+      // force reflow
+      void el.offsetWidth;
+      el.classList.add('flash');
+    }
+    _prev[id] = txt;
+  }
+  if (isPlaceholder) el.classList.add('placeholder'); else el.classList.remove('placeholder');
+}
+
+function calc() {
+  const v = id => parseFloat(document.getElementById(id).value) || 0;
+  const tt = v('totalTables');
+  const pt = v('priceableTables');
+  const sp = v('avgSpend');
+  const dw = v('daysOpen');
+  const tp = v('turnsPerDay');
+  const dc = v('daysClosed');
+
+  const tablePrice = sp * 0.225;
+  const opDays     = Math.max(0, Math.round(dw * 52) - dc);
+  const gross      = pt * tp * opDays * tablePrice;
+
+  const netLo  = gross * 0.70;
+  const netHi  = gross * 0.95;
+  const netMid = gross * 0.825;
+
+  const pricedPct = (tt > 0 && pt > 0) ? Math.round((pt / tt) * 100) : null;
+  const hasData   = sp > 0 && pt > 0 && dw > 0 && tp > 0;
+
+  const p3  = project(netMid, 3);
+  const p10 = project(netMid, 10);
+
+  setVal('r-pricedPct',  pricedPct !== null ? (pricedPct + '%') : '—', { flash: true });
+  setVal('r-pricedSub',  (tt > 0 && pt > 0) ? (pt + ' of ' + tt + ' tables') : 'of total tables');
+  setVal('r-tablePrice', sp > 0 ? fmt(tablePrice) : '—', { flash: true });
+  setVal('r-opDays',     dw > 0 ? opDays.toLocaleString() : '—', { flash: true });
+  setVal('r-opDaysSub',  dw > 0 ? (dw + ' days/wk · ' + dc + ' closed') : '—');
+  setVal('r-netLo',      hasData ? fmt(netLo) : '—', { flash: true });
+  setVal('r-netHi',      hasData ? fmt(netHi) : '—', { flash: true });
+  setVal('r-netSub',     hasData
+    ? 'Range reflects Peak fee of 5%–30%. Midpoint ' + fmt(netMid) + '/yr at 17.5% fee.'
+    : 'Fill in priceable tables and avg spend to see results.');
+
+  setVal('r3-flat',      hasData ? fmt(p3.flat)   : '—', { flash: true });
+  setVal('r3-flatSub',   hasData ? fmt(netMid) + ' × 3 years' : 'Restaurant earnings × 3');
+  setVal('r3-growth',    hasData ? fmt(p3.growth) : '—', { flash: true });
+  setVal('r3-growthSub', hasData ? 'Y1 ' + fmt(p3.yr1) + ' → Y3 ' + fmt(p3.yrN) : '15% → 11% → 8%');
+  setVal('r3-index',     hasData ? fmt(p3.index)  : '—', { flash: true });
+  setVal('r3-indexSub',  hasData ? 'Each year reinvested at 10%' : 'Each year reinvested at 10%');
+
+  setVal('r10-flat',      hasData ? fmt(p10.flat)   : '—', { flash: true });
+  setVal('r10-flatSub',   hasData ? fmt(netMid) + ' × 10 years' : 'Restaurant earnings × 10');
+  setVal('r10-growth',    hasData ? fmt(p10.growth) : '—', { flash: true });
+  setVal('r10-growthSub', hasData ? 'Y1 ' + fmt(p10.yr1) + ' → Y10 ' + fmt(p10.yrN) : '15% tapering to 3%');
+  setVal('r10-index',     hasData ? fmt(p10.index)  : '—', { flash: true });
+
+  renderChart('chart3',  hasData ? projectionSeries(netMid, 3)  : { flat: [0,0,0], growth: [0,0,0], index: [0,0,0] }, 3);
+  renderChart('chart10', hasData ? projectionSeries(netMid, 10) : { flat: new Array(10).fill(0), growth: new Array(10).fill(0), index: new Array(10).fill(0) }, 10);
+}
+
+/* ── Slider/number linkage ── */
+function setupControl(field) {
+  const num = document.getElementById(field);
+  const slider = document.getElementById(field + '_slider');
+  if (!num || !slider) return;
+
+  const max = parseFloat(slider.max);
+  const min = parseFloat(slider.min);
+
+  const updateFill = () => {
+    const val = parseFloat(slider.value) || 0;
+    const pct = ((val - min) / (max - min)) * 100;
+    slider.style.setProperty('--fill', pct + '%');
+  };
+
+  const syncSliderFromNum = () => {
+    const val = parseFloat(num.value);
+    if (!isNaN(val)) {
+      // Allow num to go beyond slider; clamp slider's displayed value
+      const clamped = Math.max(min, Math.min(max, val));
+      slider.value = clamped;
+    }
+    updateFill();
+  };
+
+  const syncNumFromSlider = () => {
+    num.value = slider.value;
+    updateFill();
+  };
+
+  num.addEventListener('input', () => { syncSliderFromNum(); calc(); });
+  slider.addEventListener('input', () => { syncNumFromSlider(); calc(); });
+
+  // Initial fill
+  syncSliderFromNum();
+}
+
+function applyBadges(badges) {
+  document.querySelectorAll('.badge[data-badge]').forEach(b => {
+    const field = b.dataset.badge;
+    const kind = (badges && badges[field]) || 'est';
+    b.classList.remove('est', 'auto');
+    b.classList.add(kind);
+    b.textContent = kind;
+  });
+}
+
+function loadData(d) {
+  if (d.restaurant !== undefined) document.getElementById('restaurantUrl').value = d.restaurant;
+  FIELDS.forEach(f => {
+    if (d[f] !== undefined) {
+      const el = document.getElementById(f);
+      el.value = d[f];
+      const slider = document.getElementById(f + '_slider');
+      if (slider) {
+        const min = parseFloat(slider.min), max = parseFloat(slider.max);
+        const clamped = Math.max(min, Math.min(max, d[f]));
+        slider.value = clamped;
+        const pct = ((clamped - min) / (max - min)) * 100;
+        slider.style.setProperty('--fill', pct + '%');
+      }
+    }
+  });
+  applyBadges(d.badges || {});
+  calc();
+}
+
+/* ── Hover/focus linkage between controls and chart ── */
+function setupChartLink() {
+  document.querySelectorAll('.control').forEach(c => {
+    const enter = () => {
+      document.querySelectorAll('.chart-svg').forEach(s => s.style.filter = 'saturate(1.05) brightness(1.02)');
+    };
+    const leave = () => {
+      document.querySelectorAll('.chart-svg').forEach(s => s.style.filter = '');
+    };
+    c.addEventListener('mouseenter', enter);
+    c.addEventListener('mouseleave', leave);
+    c.addEventListener('focusin', enter);
+    c.addEventListener('focusout', leave);
+  });
+}
+
+/* ── Lookup ── */
+function triggerLookup() {
+  const q = document.getElementById('restaurantUrl').value.trim();
+  if (!q) return;
+  const status = document.getElementById('lookupStatus');
+  const btn = document.getElementById('lookupBtn');
+  status.className = 'lookup-status loading';
+  status.textContent = 'Searching for "' + q + '"…';
+  btn.disabled = true;
+
+  if (typeof sendPrompt === 'function') {
+    sendPrompt('PEAK_LOOKUP: ' + q);
+    status.textContent = 'Search dispatched — fields will populate when results return.';
+    status.className = 'lookup-status done';
+    btn.disabled = false;
+  } else {
+    setTimeout(() => {
+      status.className = 'lookup-status';
+      status.textContent = 'Standalone preview · paste "PEAK_LOOKUP: ' + q + '" into chat to populate.';
+      btn.disabled = false;
+    }, 700);
+  }
+}
+
+/* ── Public API ── */
+window.peakIngest = function (data) {
+  const merged = Object.assign({}, PEAK_DATA, data);
+  if (data.badges) merged.badges = Object.assign({}, PEAK_DATA.badges, data.badges);
+  loadData(merged);
+  document.getElementById('modelMeta').textContent = data.restaurant || 'Custom data';
+  const status = document.getElementById('lookupStatus');
+  status.className = 'lookup-status done';
+  status.textContent = 'Hours & capacity populated.';
+};
+// Legacy compat
+window.populateLookup = function (data) {
+  const badges = {};
+  Object.keys(data).forEach(k => { if (k !== 'badges' && k !== 'restaurant') badges[k] = 'auto'; });
+  window.peakIngest(Object.assign({}, data, { badges }));
+};
+
+function resetToSample() {
+  loadData(PEAK_DATA);
+  document.getElementById('modelMeta').textContent = 'Sample · ' + PEAK_DATA.restaurant.split(',')[0];
+  const status = document.getElementById('lookupStatus');
+  status.className = 'lookup-status';
+  status.textContent = 'Sample data loaded. Drag any slider to model live.';
+}
+
+/* ── Clock ── */
+function tickClock() {
+  const d = new Date();
+  const h = d.getHours() % 12 || 12;
+  const m = String(d.getMinutes()).padStart(2, '0');
+  const ap = d.getHours() >= 12 ? 'PM' : 'AM';
+  document.getElementById('ts').textContent = h + ':' + m + ' ' + ap;
+}
+
+/* ── Boot ── */
+
+const PRESETS = {
+  busyNight:     { turnsPerDay: 3, daysOpen: 7, daysClosed: 5 },
+  primeOnly:     { priceableTables: function (d) { return Math.round(d.totalTables * 0.55); } },
+  weekendCrush:  { turnsPerDay: 3.5, priceableTables: function (d) { return Math.round(d.totalTables * 0.7); } },
+  tastingRoom:   { avgSpend: 225, turnsPerDay: 1.5 },
+  sixDay:        { daysOpen: 6, daysClosed: 12 },
+};
+function applyPreset(name) {
+  const p = PRESETS[name]; if (!p) return;
+  const current = {};
+  FIELDS.forEach(f => { current[f] = parseFloat(document.getElementById(f).value) || 0; });
+  const next = Object.assign({}, current);
+  Object.keys(p).forEach(k => {
+    next[k] = (typeof p[k] === 'function') ? p[k](current) : p[k];
+  });
+  loadData(next);
+}
+document.querySelectorAll('.suggest-chip').forEach(c => {
+  c.addEventListener('click', () => applyPreset(c.dataset.preset));
+});
+
+FIELDS.forEach(setupControl);
+setupChartLink();
+document.getElementById('lookupBtn').addEventListener('click', triggerLookup);
+document.getElementById('restaurantUrl').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); triggerLookup(); }
+});
+document.getElementById('resetBtn').addEventListener('click', resetToSample);
+
+loadData(PEAK_DATA);
+tickClock();
+setInterval(tickClock, 30000);
+</script>
+</body>
+</html>
