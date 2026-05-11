@@ -377,7 +377,7 @@ export function SceneEvent({ progress }) {
     <div className="sc sc-event">
       <div className="sc-event-card">
         <div className="sc-event-cover">
-          <img src="/assets/photos/skyline.jpeg" alt="" className="sc-event-cover-photo" aria-hidden="true"/>
+          <img src={`${import.meta.env.BASE_URL}assets/photos/skyline.jpeg`} alt="" className="sc-event-cover-photo" aria-hidden="true"/>
           <div className={`sc-event-status ${isSoldOut ? 'is-soldout' : ''}`}>
             <span className="sc-event-status-dot" />
             {isSoldOut ? 'Sold out' : 'On sale'}
