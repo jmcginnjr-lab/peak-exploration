@@ -1,0 +1,1676 @@
+/* Peak marketing — v3
+   Dark hero + footer (#162F27), gold-tinted light theme (#EFE8DB) on inner cards.
+   Schibsted Grotesk display. Sticky stacked cards. Generous padding. */
+
+@import url('https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  --display: 'Schibsted Grotesk', 'Inter', system-ui, sans-serif;
+
+  --peak-dark: #162F27;   /* hero + footer background */
+  --peak-dark-2: #0F2019;
+  --peak-light: #EFE8DB;  /* light theme for inner cards (gold-tinted bone) */
+  --peak-light-2: #E5DCC9;
+
+  --ink-text: #1A2420;
+  --ink-muted: #5B6763;
+  --ink-subtle: #8C9894;
+  --ink-border: rgba(22,47,39,0.10);
+  --ink-border-strong: rgba(22,47,39,0.20);
+
+  --dark-text: #EFE8DB;
+  --dark-muted: rgba(239,232,219,0.72);
+  --dark-subtle: rgba(239,232,219,0.48);
+  --dark-border: rgba(201,166,113,0.22);
+
+  --gold: #C1A36E;
+  --gold-bright: #D6B884;
+  --gold-deep: #9A7F4F;
+}
+
+html, body {
+  background: var(--peak-dark);
+  /* This is critical: the outer page stays dark so the sticky cards "stack" onto a dark void on both sides. */
+}
+html {
+  /* overflow-x:hidden goes on the html element, NOT body, otherwise body
+     becomes the scroll container and breaks position:sticky on descendants. */
+  overflow-x: hidden;
+}
+body {
+  color: var(--ink-text);
+  font-family: var(--font-sans);
+}
+
+/* =========== TYPE =========== */
+.mk-h1 {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 64px;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  margin: 24px 0 32px;
+  color: var(--dark-text);
+  max-width: 920px;
+  text-wrap: balance;        /* avoid orphans in display headlines */
+  font-variant-numeric: tabular-nums;
+}
+.mk-h1 em { font-style: normal; color: var(--gold); font-weight: 400; }
+
+.mk-h2 {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 42px;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 16px 0 0;
+  max-width: 680px;
+  text-wrap: balance;
+}
+.mk-h2 em { font-style: normal; color: var(--gold-deep); font-weight: 400; }
+.tone-dark .mk-h2 { color: var(--dark-text); }
+.tone-dark .mk-h2 em { color: var(--gold); }
+.tone-light .mk-h2 { color: var(--peak-dark); }
+
+/* Eyebrow override — hide the inherited 24px brass rule before each eyebrow.
+   The marketing voice carries label weight on its own; no leading mark. */
+.pk-eyebrow {
+  display: inline-flex; align-items: baseline; gap: 12px;
+  font-family: var(--font-mono, 'JetBrains Mono', ui-monospace, monospace);
+  font-size: 11px; letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.pk-eyebrow::before { display: none; }
+.mk-hero .pk-eyebrow { color: var(--gold); }
+.tone-dark .pk-eyebrow { color: var(--gold); }
+.tone-light .pk-eyebrow { color: var(--gold-deep); }
+.mk-card-idx {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0;
+  opacity: 0.55;
+}
+
+/* =========== NAV =========== */
+/* Quiet header — no glass blur. A soft fade-to-transparent gradient sits
+   behind the nav row so it stays readable over either the dark hero or
+   the light cards beneath, without the heavy "glass plate" treatment. */
+.mk-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  isolation: isolate;
+  background: transparent;
+  border-bottom: none;
+}
+.mk-nav::after {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.mk-nav.on-dark::after {
+  background: linear-gradient(to bottom, rgba(22,47,39,0.55) 0%, rgba(22,47,39,0.18) 55%, rgba(22,47,39,0) 100%);
+}
+.mk-nav-inner { position: relative; z-index: 1; }
+.mk-nav.on-light::after {
+  background: linear-gradient(to bottom, rgba(239,232,219,0.70) 0%, rgba(239,232,219,0.20) 55%, rgba(239,232,219,0) 100%);
+}
+.mk-nav-inner {
+  max-width: 1400px; margin: 0 auto;
+  padding: 20px 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.mk-brand { display: inline-flex; align-items: center; }
+.mk-logo { height: 36px; display: block; transition: filter 320ms ease; }
+.mk-links { display: flex; gap: 40px; }
+.mk-nav.on-dark .mk-links a { color: rgba(239,232,219,0.72); }
+.mk-nav.on-light .mk-links a { color: var(--ink-muted); }
+.mk-links a { font-size: 13px; text-decoration: none; font-weight: 500; letter-spacing: 0.01em; transition: color 140ms; }
+.mk-nav.on-dark .mk-links a:hover { color: var(--dark-text); }
+.mk-nav.on-light .mk-links a:hover { color: var(--peak-dark); }
+.mk-nav-cta { display: flex; align-items: center; gap: 24px; }
+.mk-link-quiet { font-size: 13px; text-decoration: none; font-weight: 500; }
+.mk-nav.on-dark .mk-link-quiet { color: rgba(239,232,219,0.7); }
+.mk-nav.on-light .mk-link-quiet { color: var(--ink-muted); }
+
+/* Login text-link in the nav — tight uppercase eyebrow tracking, sits to
+   the left of the Inquire pill. Hover lifts opacity. */
+.mk-nav-login {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-decoration: none;
+  opacity: 0.70;
+  transition-property: opacity, color;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.mk-nav.on-dark .mk-nav-login { color: var(--dark-text); }
+.mk-nav.on-light .mk-nav-login { color: var(--peak-dark); }
+.mk-nav-login:hover,
+.mk-nav-login:focus-visible { opacity: 1; outline: none; }
+
+/* =========== CURTAIN STAGE — Hero + Seats reveal ===========
+   The stage is 200vh tall so the inner pin sticks for one viewport while
+   the hero translates upward to reveal the seats section beneath. A 12vh
+   strip of seats peeks below the hero at scroll 0, so the page reads as
+   a curtain about to rise. */
+.mk-curtain-stage {
+  position: relative;
+  /* 240vh: 100vh sticky pin = 140vh of effects scroll. Was 320vh, which
+     left ~100vh of dead-zone scroll between the last VIP reveal and the
+     pin releasing — the user perceived that as "sticks then jumps". */
+  height: 240vh;
+  background: var(--peak-dark);
+}
+.mk-curtain-pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+.mk-curtain-hero {
+  position: absolute;
+  inset: 0;              /* full-page hero video — no peek strip */
+  z-index: 3;
+  transform: translateY(calc(var(--curtain, 0) * -100%));
+  will-change: transform;
+}
+/* The seats section is fixed-size inside the pin so the hero curtain
+   can slide up over it without affecting layout. */
+.mk-curtain-pin > .mk-seats {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+/* Hero soft drop shadow — replaces the previous hard "veil bar". A layered
+   gradient fades from a slight darkening at the hero's bottom edge into
+   the green seats section beneath, so the join reads as soft depth rather
+   than a horizontal cut. The shadow is anchored to .mk-curtain-hero (which
+   translates with the curtain) so it lifts away with the hero. */
+.mk-curtain-hero {
+  /* Larger, softer shadow that bleeds further into the green so the join
+     reads as atmospheric depth rather than a discrete shadow under a card.
+     Two stacked layers — wide soft halo + a closer subtle band. */
+  filter: drop-shadow(0 36px 60px rgba(0,0,0,0.22))
+          drop-shadow(0 8px 16px rgba(0,0,0,0.10));
+}
+.mk-scroll-cue {
+  position: absolute;
+  bottom: 3.5vh;
+  left: 50%;
+  z-index: 4;            /* above the hero so it stays visible */
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(239,232,219,0.62);
+  pointer-events: none;
+  /* Cue lives only when the curtain is down. Fades cleanly with progress. */
+  opacity: calc(1 - var(--curtain, 0));
+  transition-property: opacity;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.mk-scroll-cue-arrow {
+  font-size: 15px;
+  letter-spacing: 0;
+  animation: scroll-cue-bob 1.6s var(--ease-out) infinite;
+}
+@keyframes scroll-cue-bob {
+  0%, 100% { transform: translateY(0);  opacity: 0.6; }
+  50%      { transform: translateY(3px); opacity: 1;   }
+}
+.mk-curtain-hero .mk-hero {
+  height: 100%;
+  min-height: 0;
+}
+.mk-curtain-hero .mk-hero-inner {
+  padding-top: 18vh;
+  padding-bottom: 12vh;
+}
+
+/* =========== HERO =========== */
+.mk-hero {
+  position: relative;
+  min-height: 860px;
+  display: flex; align-items: center;
+  overflow: hidden;
+  background: var(--peak-dark);
+  color: var(--dark-text);
+}
+.mk-hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.55; }
+/* The loop-vid-wrap class is declared further down in the file with
+   position: relative, which would otherwise win on cascade order and pull
+   the wrapper out of absolute positioning (causing it to render as a flex
+   item taking half the hero). This double-class selector outranks both
+   single-class declarations, so the wrapper stays absolutely positioned
+   over the hero regardless of rule order. */
+.mk-hero-bg.loop-vid-wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* Scale the inner videos slightly so any baked-in left/right letterboxing
+   on the source is cropped out. The wrapper clips overflow. */
+.mk-hero-bg.loop-vid-wrap .loop-vid {
+  transform: scale(1.18);
+  transform-origin: center;
+}
+.mk-hero-scrim {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 70% 30%, rgba(22,47,39,0.2) 0%, rgba(22,47,39,0.78) 55%, rgba(22,47,39,0.96) 100%),
+    linear-gradient(180deg, rgba(22,47,39,0.2) 0%, rgba(22,47,39,0.6) 60%, rgba(22,47,39,1) 100%);
+}
+.mk-hero-inner {
+  position: relative; max-width: 920px; margin: 0 auto;
+  padding: 200px 56px 160px; z-index: 2; width: 100%;
+  text-align: center;
+}
+.mk-hero-inner .pk-eyebrow { justify-content: center; }
+.mk-hero .mk-h1 { margin-left: auto; margin-right: auto; }
+.mk-hero .mk-lede { margin-left: auto; margin-right: auto; }
+.mk-hero .mk-hero-ctas { justify-content: center; }
+.mk-hero .mk-hero-meta { justify-content: center; }
+.mk-lede {
+  font-family: var(--font-sans);
+  font-size: 18px; line-height: 1.6;
+  color: var(--dark-muted);
+  max-width: 540px; margin: 0 0 56px;
+  text-wrap: pretty;        /* avoid lonely last words in body copy */
+}
+.mk-hero-ctas { display: flex; align-items: center; gap: 32px; }
+.mk-hero-meta {
+  margin-top: 96px;
+  font-family: var(--font-mono, 'JetBrains Mono', ui-monospace, monospace);
+  font-size: 11px; letter-spacing: 0.14em;
+  color: var(--dark-subtle);
+  text-transform: uppercase;
+  display: flex; gap: 12px;
+}
+.mk-hero-meta .dot { color: rgba(201,166,113,0.5); }
+
+/* =========== INQUIRE CTA ===========
+   Closed: filled gold pill with "Inquire →" in dark ink, button has 24px
+   side padding so the text breathes inside the pill. On open the pill's
+   background drains to transparent and a separate ::after hairline scales
+   out from the form's center to span its full width — no border-radius
+   animation, so there's no curve-to-straight glitch. The button shrinks
+   its side padding to 0 so "Send →" lands hard against the right edge,
+   while the input emerges flush against the left edge. */
+.inquire {
+  display: inline-flex;
+  align-items: center;
+  height: 48px;
+  background: var(--gold);
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+  transition: background 480ms cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.inquire.size-sm { height: 40px; }
+.inquire.size-lg { height: 56px; }
+
+.inquire.is-open,
+.inquire.is-sent {
+  background: transparent;
+  cursor: default;
+}
+
+/* The growing hairline. Lives at the form's bottom edge, scales out from
+   center to full width. Because it's a single pseudo at the bottom (not
+   a rounded border), no curl/straighten artifact at any frame. */
+.inquire::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 480ms cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.inquire.is-open::after,
+.inquire.is-sent::after { transform: scaleX(1); }
+
+.inquire-input-wrap {
+  display: flex;
+  align-items: center;
+  width: 0;
+  height: 100%;
+  overflow: hidden;
+  transition: width 480ms cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.inquire.is-open .inquire-input-wrap { width: 220px; }
+.inquire.size-sm.is-open .inquire-input-wrap { width: 180px; }
+.inquire.size-lg.is-open .inquire-input-wrap { width: 260px; }
+
+.inquire-input {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  letter-spacing: 0.005em;
+  color: var(--gold);
+  padding: 0;                     /* zero padding — text starts at edge */
+  opacity: 0;
+  transition: opacity 320ms 100ms cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.inquire.is-open .inquire-input { opacity: 1; }
+.inquire-input::placeholder { color: rgba(201,166,113,0.55); }
+.inquire.size-sm .inquire-input { font-size: 13px; }
+.inquire.size-lg .inquire-input { font-size: 15px; }
+
+.inquire-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 100%;
+  padding: 0 24px;                /* breathing room inside the pill */
+  background: transparent;
+  border: 0;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  color: var(--peak-dark);
+  cursor: pointer;
+  transition-property: color, padding;
+  transition-duration: 480ms;
+  transition-timing-function: cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.inquire.size-sm .inquire-btn { padding: 0 18px; font-size: 13px; }
+.inquire.size-lg .inquire-btn { padding: 0 30px; font-size: 15px; }
+
+.inquire.is-open .inquire-btn,
+.inquire.is-sent .inquire-btn {
+  color: var(--gold);             /* gold inside the form */
+  padding: 0;                      /* arrow flush to the right edge */
+  cursor: default;
+}
+
+/* Send is always rendered at full strength regardless of validation state.
+   Submit is silently rejected if the email is invalid (handled in JSX). */
+.inquire-btn:disabled { cursor: default; opacity: 1; }
+
+.inquire-arrow {
+  display: inline-block;
+  transition: transform 200ms cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.inquire-btn:hover:not(:disabled) .inquire-arrow { transform: translateX(2px); }
+
+/* tone-light path — pill is dark ink, morph reveals the same gold line. */
+.tone-light.inquire { background: var(--peak-dark); }
+.tone-light.inquire .inquire-btn { color: var(--peak-light); }
+.tone-light.inquire.is-open,
+.tone-light.inquire.is-sent { background: transparent; }
+.tone-light.inquire.is-open .inquire-btn,
+.tone-light.inquire.is-sent .inquire-btn { color: var(--gold-deep); }
+.tone-light.inquire .inquire-input { color: var(--gold-deep); }
+.tone-light.inquire .inquire-input::placeholder { color: rgba(154,127,79,0.55); }
+
+/* =========== STACK REGION =========== */
+/* Stacking model: cards are siblings inside a sticky stage. Each card is
+   absolutely positioned with a 32px inset from the stage edges, so it reads
+   as a proper card — rounded corners, shadow, breathing room. Earlier cards
+   sit on top (higher z-index). Each card has --mk-card-travel viewports of
+   scroll travel: a long REST period during which the card sits at full rest
+   and its scene autonomously demonstrates itself, followed by a short PEEL
+   period where the card translates up out of the stage, revealing the next
+   card beneath. The stage clips overflow so the peel reads cleanly. */
+.mk-stack-region {
+  position: relative;
+  background: var(--peak-dark);
+  --mk-card-count: 5;
+  --mk-card-travel: 2.2;   /* viewports of scroll per card (must match JS) — long rests */
+  /* No tail — the last card peels out (see StackCard peel logic), so any
+     extra scroll past its peel is wasted travel that reads as a stall. */
+  height: calc(var(--mk-card-count) * var(--mk-card-travel) * 100vh);
+}
+.mk-stack-tail { display: none; }
+
+.mk-stack-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background: var(--peak-dark);
+}
+
+.mk-stack-card {
+  position: absolute;
+  top: 88px;        /* clear of nav */
+  bottom: 56px;
+  /* Card max width 1080; centered. On narrow screens, fall back to 64px inset. */
+  left: max(64px, calc(50% - 540px));
+  right: max(64px, calc(50% - 540px));
+  display: flex;
+  align-items: center;
+  border-radius: 28px;
+  padding: 56px 64px;
+  border: 1px solid rgba(22,47,39,0.08);
+  /* Layered card shadow so the rounded edge reads against the dark stage. */
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.3) inset,
+    0 18px 40px -24px rgba(0,0,0,0.28),
+    0 4px 10px -4px rgba(0,0,0,0.10),
+    0 1px 2px rgba(0,0,0,0.06);
+  overflow: hidden;
+  will-change: transform, opacity;
+  /* Peel exits the card up-and-to-the-left with a subtle counter-clockwise
+     tilt — reads like a finished page being set aside, not a strict scroll
+     dismissal. Values are LERPED in JS (toward the scroll target) so the
+     motion lags slightly behind the wheel for an elegant, weighty feel.
+     --mk-peel runs 0 (resting) → -1 (fully peeled). */
+  transform-origin: 50% 50%;
+  transform:
+    translate3d(
+      calc(var(--mk-peel, 0) * 5vw),
+      calc(var(--mk-peel, 0) * 110vh),
+      0
+    )
+    rotate(calc(var(--mk-peel, 0) * 2.5deg))
+    scale(calc(1 + var(--mk-peel, 0) * 0.03));
+  /* Cards are fully opaque — they should NEVER show what's underneath.
+     The reveal feel comes from the inner UI scene rising 10px (see below),
+     not from card transparency. */
+  opacity: 1;
+}
+/* Subtle entry on the inner UI: rises 10px as the card lands. */
+.mk-stack-card .mk-card-scene,
+.mk-stack-card .mk-card-copy {
+  transform: translateY(calc((1 - var(--mk-reveal, 1)) * 10px));
+  opacity: calc(0.4 + 0.6 * var(--mk-reveal, 1));
+  transition: opacity 360ms ease, transform 520ms cubic-bezier(.22,.61,.36,1);
+}
+/* Earlier cards on top so they cover the cards beneath while pinned.
+   Each subsequent card peeks ~5px out at the bottom, so the stack reads
+   as a deck of cards rather than a single floating card. */
+.mk-stack-card[data-idx="0"] { z-index: 10; bottom: 56px; }
+.mk-stack-card[data-idx="1"] { z-index: 9;  bottom: 51px; }
+.mk-stack-card[data-idx="2"] { z-index: 8;  bottom: 46px; }
+.mk-stack-card[data-idx="3"] { z-index: 7;  bottom: 41px; }
+.mk-stack-card[data-idx="4"] { z-index: 6;  bottom: 36px; }
+
+/* tone-light is the default ink color; per-card backgrounds vary below so
+   each scene sits on its own complementary brand tint. */
+.mk-stack-card.tone-light {
+  color: var(--ink-text);
+}
+/* Complementary brand tints — light enough to keep the inner UI readable. */
+.mk-stack-card.tone-light[data-idx="0"] { background: #F2EADC; }  /* warm bone */
+.mk-stack-card.tone-light[data-idx="1"] { background: #F1E6CE; }  /* brass wash */
+.mk-stack-card.tone-light[data-idx="2"] { background: #E5EBDF; }  /* sage */
+.mk-stack-card.tone-light[data-idx="3"] { background: #F1DDD0; }  /* clay */
+.mk-stack-card.tone-light[data-idx="4"] { background: #DFE5E3; }  /* slate */
+.mk-stack-card.tone-dark {
+  background: var(--peak-dark-2);
+  color: var(--dark-text);
+  border: 1px solid rgba(201,166,113,0.15);
+}
+
+.mk-stack-inner {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.mk-card-head { margin-bottom: 56px; }
+
+/* Split layout — copy left, scene right (scene is the hero). */
+.mk-card-split {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.85fr) minmax(420px, 1.15fr);
+  gap: 80px;
+  align-items: center;
+  min-height: 520px;
+}
+.mk-card-copy {
+  display: flex; flex-direction: column; gap: 20px;
+  padding-right: 12px;
+}
+.mk-card-copy .mk-h2 {
+  font-size: 38px;
+  margin: 8px 0 4px;
+}
+.mk-card-copy .mk-lead-para {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.6;
+  max-width: 480px;
+}
+.mk-card-scene {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%;  /* allow scenes to be tall — the card itself is 100vh */
+  max-height: calc(100vh - 140px);
+  /* No overflow:hidden — would clip the inner scene's drop shadow. The
+     padding-bottom gives the shadow room to render below the scene card
+     before the outer .mk-stack-card's overflow boundary. */
+  padding: 8px 8px 32px;
+}
+.mk-scene-frame {
+  width: 100%;
+  max-width: 620px;
+  aspect-ratio: 5 / 4;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+/* Marketplace scene — taller frame so the punch-line toast at the bottom
+   (3 paid placements above your listing · cost) has full room to land. */
+.mk-card-scene:has(.sc-mkt2) .mk-scene-frame {
+  aspect-ratio: 5 / 6.4;
+  max-width: 560px;
+}
+/* Guestbook scene is content-driven; cap its height so it never spills out
+   of the card. Anchor to the top so the card header is always visible
+   instead of getting clipped above the frame. */
+.mk-card-scene:has(.sc-guest) {
+  align-items: flex-start;
+  padding-top: 8px;
+}
+.mk-card-scene:has(.sc-guest) .mk-scene-frame {
+  aspect-ratio: auto;
+  max-width: 540px;
+  max-height: min(680px, calc(100vh - 240px));
+  align-items: flex-start;
+}
+
+/* Legacy grid kept around for any existing .mk-card-grid users (none now). */
+.mk-card-grid { display: grid; grid-template-columns: 1fr; gap: 48px; }
+.mk-card-grid.has-art { grid-template-columns: 1.2fr 0.9fr; gap: 80px; align-items: center; }
+.mk-card-grid.has-art.art-right > .mk-card-body { order: 1; }
+.mk-card-grid.has-art.art-right > .mk-card-art { order: 2; }
+.mk-card-art { display: flex; align-items: center; justify-content: center; }
+.mk-bear { width: 100%; max-width: 340px; height: auto; display: block; }
+.mk-product-img { width: 100%; border-radius: 16px; display: block; box-shadow: 0 20px 40px rgba(0,0,0,0.35); }
+
+/* LEAD PARAGRAPH */
+.mk-lead-para {
+  font-size: 18px; line-height: 1.7;
+  max-width: 620px; margin: 0 0 48px;
+}
+.tone-light .mk-lead-para { color: var(--ink-muted); }
+.tone-dark .mk-lead-para { color: var(--dark-muted); }
+
+/* PROBLEM rows */
+.mk-problem-list { display: flex; flex-direction: column; }
+.mk-prob-row {
+  display: grid; grid-template-columns: 60px 1fr; gap: 28px;
+  padding: 28px 0;
+}
+.tone-light .mk-prob-row { border-top: 1px solid var(--ink-border); }
+.tone-light .mk-prob-row:last-child { border-bottom: 1px solid var(--ink-border); }
+.tone-dark .mk-prob-row { border-top: 1px solid var(--dark-border); }
+.tone-dark .mk-prob-row:last-child { border-bottom: 1px solid var(--dark-border); }
+.mk-prob-num {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px; letter-spacing: 0.2em;
+  padding-top: 6px;
+}
+.tone-light .mk-prob-num { color: var(--gold-deep); }
+.tone-dark .mk-prob-num { color: var(--gold); }
+.mk-prob-t {
+  font-family: var(--display); font-weight: 500;
+  font-size: 20px; margin-bottom: 8px;
+  letter-spacing: -0.015em;
+}
+.tone-light .mk-prob-t { color: var(--peak-dark); }
+.tone-dark .mk-prob-t { color: var(--dark-text); }
+.mk-prob-b { font-size: 15px; line-height: 1.65; max-width: 540px; }
+.tone-light .mk-prob-b { color: var(--ink-muted); }
+.tone-dark .mk-prob-b { color: var(--dark-muted); }
+
+/* FEATURE list (simpler, airy) */
+.mk-feature-list { display: flex; flex-direction: column; gap: 0; }
+.mk-feat-row {
+  display: grid; grid-template-columns: 220px 1fr; gap: 48px;
+  padding: 28px 0;
+  border-top: 1px solid var(--dark-border);
+  align-items: baseline;
+}
+.mk-feat-row:last-child { border-bottom: 1px solid var(--dark-border); }
+.mk-feat-t {
+  font-family: var(--display); font-weight: 500;
+  font-size: 20px; letter-spacing: -0.015em;
+  color: var(--dark-text);
+}
+.mk-feat-b { font-size: 15px; line-height: 1.65; color: var(--dark-muted); }
+
+/* STEPS */
+.mk-steps { list-style: none; padding: 0; margin: 0; }
+.mk-step {
+  display: grid; grid-template-columns: 60px 1fr; gap: 28px;
+  padding: 28px 0; border-top: 1px solid var(--ink-border);
+}
+.mk-step:last-child { border-bottom: 1px solid var(--ink-border); }
+.mk-step-num {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px; letter-spacing: 0.2em;
+  color: var(--gold-deep); padding-top: 6px;
+}
+.mk-step-t {
+  font-family: var(--display); font-weight: 500;
+  font-size: 20px; letter-spacing: -0.015em;
+  color: var(--peak-dark); margin-bottom: 6px;
+}
+.mk-step-b { font-size: 15px; line-height: 1.65; color: var(--ink-muted); max-width: 520px; }
+
+/* STATS */
+.mk-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px;
+  margin: 0 0 56px;
+}
+.mk-stat { border-top: 1px solid var(--dark-border); padding-top: 20px; }
+.mk-stat-n {
+  font-family: var(--display); font-weight: 500;
+  font-size: 56px; line-height: 1; color: var(--gold);
+  letter-spacing: -0.03em;
+}
+.mk-stat-l {
+  font-size: 13px; color: var(--dark-muted);
+  margin-top: 12px; max-width: 180px;
+}
+.mk-result-quote {
+  font-family: var(--display); font-weight: 400;
+  font-size: 22px; line-height: 1.5;
+  color: var(--dark-text);
+  max-width: 680px; padding-left: 24px;
+  border-left: 1px solid var(--gold);
+  margin: 0; letter-spacing: -0.015em;
+}
+.mk-result-quote em { color: var(--gold); font-style: normal; }
+.mk-rq-attr {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--dark-subtle);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  margin-top: 20px;
+}
+
+/* INQUIRE anchor inside final card */
+.mk-inquire-anchor { margin: 8px 0 24px; }
+.mk-inquire-fine {
+  margin-top: 12px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--ink-subtle);
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+
+/* =========== BELOW-FOLD SECTIONS ===========
+   All beats below the cards live on the same forest-ink surface as the
+   curtain region above, so the page reads as one continuous canvas rather
+   than a dark/light/dark sandwich. Grids are full-bleed; data is line-
+   driven; lifestyle photos appear only as full-bleed atmospheric strips
+   between sections. */
+.mk-sec {
+  position: relative;
+  background: var(--peak-dark);
+  color: var(--dark-text);
+  padding: 128px 0;
+  z-index: 10;
+  overflow: visible;          /* let polaroids extend past the section edges */
+}
+.mk-sec + .mk-sec { padding-top: 96px; }
+
+/* Section heads sit in a centered text column for legibility, even though
+   the data grids beneath them go full bleed. */
+.mk-sec-head {
+  max-width: 1100px;
+  margin: 0 auto 72px;
+  padding: 0 32px;
+  text-align: center;
+}
+.mk-sec-eyebrow {
+  color: var(--gold);
+  margin-bottom: 28px;
+  display: inline-flex;
+}
+.mk-sec-h {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 40px;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  color: var(--dark-text);
+  margin: 0 0 20px;
+  text-wrap: balance;
+}
+.mk-sec-h-display { font-size: 56px; margin-bottom: 28px; }
+.mk-sec-sub {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--dark-muted);
+  max-width: 60ch;
+  margin: 0 auto;
+  text-wrap: pretty;
+}
+
+/* ── LoopVideo — two stacked <video> elements crossfading at the seam ── */
+.loop-vid-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.loop-vid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 600ms cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.loop-vid.is-active { opacity: 1; }
+
+/* ── Bear (peeking behind a table) ──
+   `.bear-anchor` is a 0-height block whose BOTTOM edge sits exactly on
+   the grid line we want the bear to "rest" on. Two modes:
+   - --flow: anchor in document flow (between head and data grid).
+   - --chart: anchor absolutely positioned at the chart's first grid line.
+   The `.bear-peek` inside is absolutely positioned with bottom: 0, so the
+   bear's hard bottom edge aligns precisely with that grid line — bear and
+   grid read as connected. The bear shape is rendered via mask-image of
+   the SVG against a brass-tinted background matching the grid line colour. */
+.bear-anchor {
+  position: relative;
+  width: 100%;
+  height: 0;
+  pointer-events: none;
+}
+.bear-anchor--chart {
+  position: absolute;
+  top: 25%;                             /* y of first grid line in chart */
+  left: 0;
+  right: 0;
+  width: 100%;
+  /* Extend past the chart's horizontal padding so the bear can sit close
+     to the viewport edge rather than just inside the chart content area. */
+  margin: 0 calc(-1 * max(48px, 5vw));
+}
+.bear-peek {
+  position: absolute;
+  bottom: 0;                            /* hard edge meets grid line */
+  width: var(--bear-size, 440px);
+  height: var(--bear-clip, 220px);
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;                     /* clips bear's bottom half cleanly */
+  opacity: 0.65;                        /* fixed — no scroll fade, brass tint
+                                            keeps it quiet on its own */
+}
+/* Push bears close to the viewport edges so the centered head/sub copy
+   keeps plenty of breathing room. Acceptable to be near the browser edge. */
+.bear-peek.side-left  { left: clamp(0px, 1.5vw, 32px); }
+.bear-peek.side-right { right: clamp(0px, 1.5vw, 32px); }
+
+.bear-shape {
+  width: var(--bear-size, 440px);
+  height: var(--bear-size, 440px);
+  /* Same brass tint as the page's hairline grid lines. */
+  background-color: var(--dark-border);
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center top;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center top;
+}
+
+/* ── Real results ── 5 metric cells edge-to-edge under the head.
+   No filled card backgrounds; just brass-tinted hairlines between cells. */
+.mk-results-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  width: 100%;
+  position: relative;
+}
+/* Scroll-drawn horizontal rules — top and bottom of the grid. Each scales
+   from 0 to 1 along its length as the section's --p climbs. They render
+   independently so the grid feels assembled rather than stamped. */
+.mk-results-grid::before,
+.mk-results-grid::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: var(--dark-border);
+  transform: scaleX(clamp(0, calc((var(--p, 0) - 0.00) * 4), 1));
+  transform-origin: left;
+}
+.mk-results-grid::before { top: 0; }
+.mk-results-grid::after  {
+  bottom: 0;
+  transform: scaleX(clamp(0, calc((var(--p, 0) - 0.20) * 4), 1));
+  transform-origin: right;
+}
+
+.mk-results-cell {
+  padding: 64px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 56px;
+  min-height: 280px;
+  position: relative;
+}
+/* Vertical hairlines between cells — staggered draw-down, each cell's
+   right edge enters slightly later than the previous. */
+.mk-results-cell::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: var(--dark-border);
+  transform-origin: top;
+  transform: scaleY(clamp(0, calc((var(--p, 0) - 0.05) * 4), 1));
+}
+.mk-results-cell:nth-child(1)::after { transform: scaleY(clamp(0, calc((var(--p, 0) - 0.05) * 4), 1)); }
+.mk-results-cell:nth-child(2)::after { transform: scaleY(clamp(0, calc((var(--p, 0) - 0.09) * 4), 1)); }
+.mk-results-cell:nth-child(3)::after { transform: scaleY(clamp(0, calc((var(--p, 0) - 0.13) * 4), 1)); }
+.mk-results-cell:nth-child(4)::after { transform: scaleY(clamp(0, calc((var(--p, 0) - 0.17) * 4), 1)); }
+.mk-results-cell:last-child::after { display: none; }
+.mk-results-num {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 52px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+.mk-results-label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dark-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.mk-results-quote-wrap {
+  max-width: 720px;
+  margin: 80px auto 0;
+  text-align: center;
+  padding: 0 32px;
+}
+.mk-results-quote {
+  font-family: var(--display);
+  font-size: 22px;
+  line-height: 1.45;
+  font-weight: 400;
+  color: var(--dark-text);
+  letter-spacing: -0.01em;
+  margin: 0 0 20px;
+  text-wrap: balance;
+}
+.mk-results-attr {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: var(--dark-subtle);
+}
+
+/* ── Growth — Small potatoes ──
+   Wide chart canvas. Three faint horizontal hairlines establish the page
+   grid; a fourth gold path picks up from the baseline and curves through
+   three plotted points. Numbers and labels float in HTML over the SVG so
+   the typography stays crisp. */
+.mk-growth-chart {
+  position: relative;
+  width: 100%;
+  height: 480px;
+  /* Full-bleed; small inner gutter keeps the data points off the edges. */
+  padding: 0 max(48px, 5vw);
+  box-sizing: border-box;
+}
+.mk-growth-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* Scroll-driven chart animations.
+   The section's --p custom property is set in JS from scroll progress (0→1
+   as the section moves through the viewport). All four grid lines, the
+   data line, the dots, and the labels read from this var via clamp()/calc
+   so they grow and fade exactly in step with the wheel — never finishing
+   before the section is fully on-screen, never lagging behind the user. */
+
+/* Grid lines draw left-to-right with a small per-line stagger. They settle
+   first, before the data line begins to climb. */
+.mk-growth-svg .g-grid {
+  stroke-dasharray: 1000;
+}
+.mk-growth-svg .g-grid-1 { stroke-dashoffset: calc(1000 - 1000 * clamp(0, calc((var(--p, 0) - 0.00) * 4), 1)); }
+.mk-growth-svg .g-grid-2 { stroke-dashoffset: calc(1000 - 1000 * clamp(0, calc((var(--p, 0) - 0.04) * 4), 1)); }
+.mk-growth-svg .g-grid-3 { stroke-dashoffset: calc(1000 - 1000 * clamp(0, calc((var(--p, 0) - 0.08) * 4), 1)); }
+.mk-growth-svg .g-grid-4 { stroke-dashoffset: calc(1000 - 1000 * clamp(0, calc((var(--p, 0) - 0.12) * 4), 1)); }
+
+/* Data line — climbs over the middle of the section's scroll. Starts at
+   p=0.18, completes at ~0.68 (multiplier 2.0 over a 0.50 window). Faster
+   per-unit-scroll than before so the third metric arrives before the chart
+   exits the viewport. */
+.mk-growth-path {
+  stroke-dasharray: 1700;
+  stroke-dashoffset: calc(1700 - 1700 * clamp(0, calc((var(--p, 0) - 0.18) * 2.0), 1));
+}
+
+/* Dots fade in as the line reaches their x position. Path percentages
+   ~18% / ~50% / ~82% along; with line draw-rate of 2.0 starting at 0.18
+   that lands them at p≈0.27 / 0.43 / 0.59 respectively. */
+.mk-growth-dot { opacity: 0; }
+.mk-growth-dot.dot-1 { opacity: clamp(0, calc((var(--p, 0) - 0.27) * 14), 1); }
+.mk-growth-dot.dot-2 { opacity: clamp(0, calc((var(--p, 0) - 0.43) * 14), 1); }
+.mk-growth-dot.dot-3 { opacity: clamp(0, calc((var(--p, 0) - 0.59) * 14), 1); }
+
+/* Number + label fade in right after their dot — small lag so the metric
+   reads as "the line has arrived, here's the number". */
+.growth-pt { opacity: 0; }
+.growth-pt.growth-pt-1 { opacity: clamp(0, calc((var(--p, 0) - 0.18) * 14), 1); }
+.growth-pt.growth-pt-2 { opacity: clamp(0, calc((var(--p, 0) - 0.32) * 14), 1); }
+.growth-pt.growth-pt-3 { opacity: clamp(0, calc((var(--p, 0) - 0.48) * 14), 1); }
+.mk-growth-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* Growth-pt is a 0×0 anchor placed exactly on the dot. The number floats
+   above it and the label below, each with a generous gap so neither
+   touches the dot itself. */
+.growth-pt {
+  position: absolute;
+  width: 0;
+  height: 0;
+  white-space: nowrap;
+}
+.growth-pt-num,
+.growth-pt-label {
+  position: absolute;
+  left: 0;
+  transform: translateX(-50%);
+  display: block;
+}
+.growth-pt-num {
+  bottom: 32px;                /* lifts the value 32px clear of the dot */
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 36px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+.growth-pt-label {
+  top: 32px;                   /* drops the label 32px below the dot */
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dark-muted);
+}
+
+/* ── Stay in control ──
+   Full-bleed feature grid. Hairline cells, no filled backgrounds. Icons
+   are 1.25-stroke line glyphs in muted bone; titles and copy in dark text. */
+.mk-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  position: relative;
+}
+/* Same scroll-driven pattern as Real Results — the grid's outer rules
+   scale in along their axes; the cell-internal rules scale-down with
+   small per-cell stagger. */
+.mk-feature-grid::before,
+.mk-feature-grid::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: var(--dark-border);
+  transform-origin: left;
+}
+.mk-feature-grid::before {
+  top: 0;
+  transform: scaleX(clamp(0, calc((var(--p, 0) - 0.00) * 4), 1));
+}
+.mk-feature-grid::after {
+  bottom: 0;
+  transform: scaleX(clamp(0, calc((var(--p, 0) - 0.25) * 4), 1));
+  transform-origin: right;
+}
+
+.mk-feature {
+  padding: 56px 40px 64px;
+  text-align: left;
+  position: relative;
+}
+/* Right edge of each non-last-column cell, staggered. */
+.mk-feature::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: var(--dark-border);
+  transform-origin: top;
+}
+.mk-feature:nth-child(1)::after { transform: scaleY(clamp(0, calc((var(--p, 0) - 0.06) * 4), 1)); }
+.mk-feature:nth-child(2)::after { transform: scaleY(clamp(0, calc((var(--p, 0) - 0.10) * 4), 1)); }
+.mk-feature:nth-child(4)::after { transform: scaleY(clamp(0, calc((var(--p, 0) - 0.14) * 4), 1)); }
+.mk-feature:nth-child(5)::after { transform: scaleY(clamp(0, calc((var(--p, 0) - 0.18) * 4), 1)); }
+.mk-feature:nth-child(3n)::after { display: none; }
+/* Mid-row horizontal rule between row 1 and row 2. */
+.mk-feature:nth-child(-n+3)::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background: var(--dark-border);
+  transform: scaleX(clamp(0, calc((var(--p, 0) - 0.15) * 4), 1));
+  transform-origin: left;
+}
+.mk-feature svg {
+  width: 24px;
+  height: 24px;
+  color: var(--gold);
+  margin-bottom: 36px;
+  display: block;
+}
+.mk-feature-title {
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--dark-text);
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+}
+.mk-feature-desc {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--dark-muted);
+  margin: 0;
+  text-wrap: pretty;
+}
+
+/* ── Peak vs the rest ── full-bleed comparison table on dark. */
+.mk-compare {
+  display: grid;
+  border-top: 1px solid var(--dark-border);
+  width: 100%;
+}
+.mk-compare-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr;
+  border-bottom: 1px dashed var(--dark-border);
+  padding: 28px max(48px, 5vw);
+  align-items: start;
+}
+.mk-compare-head-row {
+  border-bottom: 1px solid var(--border-strong);
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+.mk-compare-feature {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dark-text);
+  padding-right: 24px;
+}
+.mk-compare-cell {
+  padding-right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mk-compare-cell.is-peak {
+  position: relative;
+}
+.mk-compare-cell.is-peak::before {
+  content: '';
+  position: absolute;
+  left: -12px; top: -8px; bottom: -8px;
+  width: 1px;
+  background: var(--gold);
+}
+.mk-compare-h {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  color: var(--dark-muted);
+}
+.mk-compare-h.is-peak { color: var(--gold); }
+.mk-compare-mark {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1;
+}
+.mark-yes { color: #9CB592; }     /* desaturated sage on dark */
+.mark-no  { color: #C58A6A; }     /* warm terracotta on dark */
+.mark-partial { color: var(--dark-subtle); }
+.mk-compare-note {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dark-muted);
+}
+
+/* =========== FOOTER ===========
+   Fixed at the bottom of the viewport, behind the main content. As the
+   user scrolls past the main content into the footer-spacer area, the
+   main column rises off-screen and exposes this fixed footer beneath —
+   a curtain reveal. Logo is centered vertically; copyright sits anchored
+   to the bottom of the viewport. */
+.mk-main {
+  position: relative;
+  z-index: 3;
+  background: var(--peak-dark);
+}
+.mk-footer-spacer {
+  height: 100vh;
+  background: transparent;
+  position: relative;
+  z-index: 3;
+  pointer-events: none;
+}
+.mk-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  z-index: 1;            /* under .mk-main */
+  overflow: hidden;
+  color: var(--dark-text);
+  isolation: isolate;
+  /* Children (logo, cta, fineprint) are all position:absolute so the
+     three landmarks sit at fixed percentages of the viewport — no flex
+     math, no padding that needs to align with fineprint height. */
+}
+.mk-footer-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  /* Subtle ken-burns zoom driven by the spacer's scroll progress. Starts
+     at 1.04 (pre-zoomed so we never see a hard scale-from-1 pop) and
+     reaches ~1.12 once the footer is fully revealed. */
+  transform: scale(calc(1.04 + var(--reveal-p, 0) * 0.08));
+  transform-origin: center;
+  transition: transform 200ms linear;
+  will-change: transform;
+}
+.mk-footer-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(22,47,39,0.40) 0%, rgba(22,47,39,0.85) 100%);
+}
+/* Logo — exact vertical center of the footer viewport. */
+.mk-footer-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  width: 220px;
+  height: auto;
+  display: block;
+}
+/* CTA — midpoint between the logo (50%) and the bottom (100%). The
+   fineprint pinned at the very bottom keeps the pill from looking like
+   it's "near the bottom"; 75% feels comfortably between the two. */
+.mk-footer-cta {
+  position: absolute;
+  top: 75%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+/* Larger pill in the footer — bump padding/font over the .size-lg
+   default since this is the page's terminal CTA. */
+.mk-footer-cta .inquire { height: 60px; }
+.mk-footer-cta .inquire-btn { padding: 0 36px; font-size: 16px; }
+
+/* Fineprint — single tiny line of copyright, anchored to the bottom
+   edge of the viewport. */
+.mk-footer-fineprint {
+  position: absolute;
+  bottom: 28px;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: rgba(239,232,219,0.42);
+  text-align: center;
+}
+
+/* Nav fade-out when the footer is in view. The transition lets the nav
+   ghost away rather than snap-disappear. pointer-events:none lets clicks
+   pass through to the footer content if the nav happens to overlap. */
+.mk-nav {
+  transition:
+    opacity 360ms cubic-bezier(0.2, 0.6, 0.2, 1),
+    transform 360ms cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.mk-nav.is-hidden {
+  opacity: 0;
+  transform: translateY(-12px);
+  pointer-events: none;
+}
+
+/* =========== RESPONSIVE CLAMPS =========== */
+@media (max-width: 1100px) {
+  .mk-card-grid.has-art { grid-template-columns: 1fr; }
+  .mk-card-art { order: -1 !important; max-width: 320px; margin: 0 auto; }
+  .mk-stack-card { padding: 48px 40px; min-height: 0; }
+  .mk-card-split { grid-template-columns: 1fr; gap: 40px; min-height: 0; }
+  .mk-scene-frame { max-width: 560px; margin: 0 auto; }
+}
+@media (max-width: 1100px) {
+  .mk-sec-h-display { font-size: 44px; }
+  .mk-results-grid { grid-template-columns: repeat(3, 1fr); }
+  .mk-results-cell:nth-child(3n) { border-right: 0; }
+  .mk-results-cell { border-bottom: 1px solid var(--dark-border); }
+  .mk-results-cell:nth-last-child(-n+1):nth-child(3n+1),
+  .mk-results-cell:nth-last-child(-n+2) { /* leave grid bottom border */ }
+  .mk-feature-grid { grid-template-columns: repeat(2, 1fr); }
+  .mk-feature:nth-child(3n) { border-right: 1px solid var(--dark-border); }
+  .mk-feature:nth-child(2n) { border-right: 0; }
+  .mk-compare-row { grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr; padding-left: 32px; padding-right: 32px; }
+  .mk-growth-chart { height: 420px; }
+}
+@media (max-width: 720px) {
+  .mk-h1 { font-size: 44px; }
+  .mk-h2 { font-size: 28px; }
+  .mk-nav-inner, .mk-hero-inner { padding-left: 24px; padding-right: 24px; }
+  .mk-stack-region { padding: 48px 16px 0; }
+  /* Cards on mobile — the bottom deck offsets are dialed down vs desktop,
+     freeing room per card for content. `top: 88` keeps a comfortable gap
+     below the fixed nav (with the iOS safe-area / status bar in mind);
+     the deck offsets compress from there. Aligning to the top means the
+     eyebrow always sits flush below the card edge and never gets
+     centered out of view by long copy + scene. */
+  .mk-stack-card {
+    top: 88px;
+    padding: 24px 20px;
+    border-radius: 20px;
+    align-items: flex-start;
+    overflow: hidden;
+  }
+  .mk-stack-card[data-idx="0"] { bottom: 36px; }
+  .mk-stack-card[data-idx="1"] { bottom: 32px; }
+  .mk-stack-card[data-idx="2"] { bottom: 28px; }
+  .mk-stack-card[data-idx="3"] { bottom: 24px; }
+  .mk-stack-card[data-idx="4"] { bottom: 20px; }
+  .mk-card-split {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    min-height: 0;
+    width: 100%;
+    align-content: start;
+  }
+  .mk-card-copy { padding-right: 0; gap: 10px; }
+  .mk-card-copy .mk-h2 { font-size: 24px; margin: 4px 0 0; line-height: 1.15; }
+  .mk-card-copy .mk-lead-para {
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+    max-width: none;
+  }
+  /* Scene cap is a 3-way clamp so it adapts: never tiny, never tall enough
+     to crowd the copy on long phones. */
+  .mk-card-scene {
+    max-height: clamp(260px, 44vh, 380px);
+    padding: 0;
+    align-items: flex-start;
+    overflow: hidden;
+  }
+  .mk-scene-frame {
+    aspect-ratio: auto;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+  }
+  .mk-card-scene:has(.sc-guest) .mk-scene-frame { max-height: 100%; }
+  .mk-lead-para { font-size: 15px; line-height: 1.55; margin-bottom: 0; }
+  .mk-links { display: none; }
+  .mk-stats { grid-template-columns: 1fr 1fr; gap: 24px; }
+  .mk-feat-row { grid-template-columns: 1fr; gap: 8px; }
+  .mk-sec { padding: 88px 0; }
+  .mk-sec-head { padding: 0 24px; margin-bottom: 56px; }
+  .mk-sec-h-display { font-size: 30px; }
+  .mk-results-grid { grid-template-columns: repeat(2, 1fr); }
+  .mk-results-cell { padding: 40px 24px; min-height: 0; gap: 32px; border-right: 1px solid var(--dark-border) !important; border-bottom: 1px solid var(--dark-border); }
+  .mk-results-cell:nth-child(2n) { border-right: 0 !important; }
+  /* Drop the 5th metric on phones so the grid lands as a perfect 2×2
+     (a lone 5th cell with no sibling on its row reads as broken). */
+  .mk-results-cell:nth-child(5) { display: none; }
+  .mk-results-cell:nth-child(3),
+  .mk-results-cell:nth-child(4) { border-bottom: 0; }
+  .mk-results-num { font-size: 38px; }
+  .mk-results-quote-wrap { margin-top: 56px; padding: 0 24px; }
+  .mk-results-quote { font-size: 18px; }
+  .mk-feature-grid { grid-template-columns: 1fr; }
+  .mk-feature { padding: 36px 24px; border-right: 0 !important; border-bottom: 1px solid var(--dark-border) !important; }
+  .mk-feature:last-child { border-bottom: 0 !important; }
+  .mk-photo-strip { height: 180px; }
+  .mk-growth-chart { height: 360px; padding: 0 24px; }
+  .growth-pt-num { font-size: 26px; }
+  .growth-pt-label { font-size: 9px; letter-spacing: 0.16em; }
+  /* Compare table on mobile = horizontal-scroll table. The feature
+     column is sticky on the left so the reader always sees "what" the
+     marks refer to as they swipe through the four platform columns.
+     Each row becomes a horizontal grid wider than the viewport; the
+     parent .mk-compare gets overflow-x:auto with momentum scroll. */
+  .mk-compare { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .mk-compare-row {
+    display: grid;
+    grid-template-columns: 130px repeat(4, minmax(150px, 1fr));
+    gap: 0;
+    padding: 0;
+    min-width: max-content;
+    border-bottom: 1px dashed var(--dark-border);
+    align-items: stretch;
+  }
+  .mk-compare-head-row {
+    display: grid;
+    border-bottom: 1px solid var(--border-strong);
+  }
+  /* Sticky feature column. Needs a SOLID background to overlap the
+     scrolling cells, plus a hairline right-edge so the seam reads as a
+     deliberate divider rather than an accident of overflow. */
+  .mk-compare-feature {
+    position: sticky;
+    left: 0;
+    background: var(--peak-dark);
+    padding: 16px 14px;
+    z-index: 2;
+    border-right: 1px solid var(--dark-border);
+    font-size: 13px;
+    color: var(--dark-text);
+    display: flex;
+    align-items: center;
+  }
+  .mk-compare-head-row .mk-compare-feature {
+    color: var(--dark-muted);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  /* Value cells — uniform width, mark + note stacked. */
+  .mk-compare-cell {
+    padding: 16px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .mk-compare-h {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+  /* Peak column accent — replace the desktop left-side gold bar with a
+     top-edge gold rule so the column still reads as "ours" while the
+     row is scrolling horizontally. The :before is repurposed entirely. */
+  .mk-compare-cell.is-peak { position: relative; }
+  .mk-compare-cell.is-peak::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 2px;
+    width: auto;
+    background: var(--gold);
+  }
+  .mk-compare-mark { font-size: 16px; }
+  .mk-compare-note { font-size: 12px; line-height: 1.45; }
+  .mk-footer-logo { width: 180px; }
+  .mk-footer-cta .inquire { height: 52px; }
+  .mk-footer-cta .inquire-btn { padding: 0 26px; font-size: 14px; }
+  .mk-footer-fineprint { font-size: 9px; bottom: 24px; }
+
+  /* Floorplans on mobile are handled in the dedicated 1024px + 720px
+     blocks further down (search "mk-seats-row") — they switch to a
+     3-plan flex layout there. */
+
+  /* Hide decorative bears on phones — the data sections already need every
+     pixel of breathing room and the bears would either overflow or visually
+     compete with the centered grids/tables. */
+  .bear-anchor { display: none !important; }
+
+  /* Data sections — bring text content above any background art and
+     ensure things don't visually collide. */
+  .mk-results-grid,
+  .mk-growth-chart,
+  .mk-compare-row,
+  .mk-sec-head { position: relative; z-index: 2; }
+}
+
+/* =========== SEATS — revealed beneath the curtain =========== */
+.mk-seats {
+  background: var(--peak-dark);
+  color: var(--dark-text);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mk-seats-inner {
+  width: 100%;
+  max-width: 1400px;
+  padding: 64px 56px;
+  text-align: center;
+}
+.mk-seats-mark { margin-bottom: 28px; }
+.mk-seats-mark img { width: 56px; height: 56px; opacity: 0.95; }
+.mk-seats-h {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 48px;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--dark-text);
+  margin: 0 auto 20px;
+  max-width: 760px;
+  text-wrap: balance;
+}
+.mk-seats-sub {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--dark-muted);
+  max-width: 640px;
+  margin: 0 auto 72px;
+  text-wrap: pretty;
+}
+.mk-seats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  gap: 24px;
+  align-items: end;
+  justify-items: center;
+}
+/* Restaurant reveal — the four other archetypes are pulled toward the
+   center while the restaurant slot is empty. When `data-show-restaurant`
+   flips true, the restaurant figure fades + scales in, and the four outer
+   plans slide back to their grid-natural positions, opening up the space
+   visibly. The asymmetry between "compressed" and "spread" makes Peak's
+   arrival into the row feel deliberate, not subtle. */
+.plan-figure {
+  transition: transform 950ms cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.plan-figure:nth-child(1) { transform: translateX(90px); }
+.plan-figure:nth-child(2) { transform: translateX(45px); }
+.plan-figure:nth-child(4) { transform: translateX(-45px); }
+.plan-figure:nth-child(5) { transform: translateX(-90px); }
+.mk-seats[data-show-restaurant="true"] .plan-figure {
+  transform: translateX(0);
+}
+.plan-figure--restaurant {
+  opacity: 0;
+  transform: scale(0.85);
+  transform-origin: center;
+  transition:
+    opacity 750ms cubic-bezier(0.2, 0.6, 0.2, 1) 300ms,
+    transform 750ms cubic-bezier(0.2, 0.6, 0.2, 1) 300ms;
+}
+.mk-seats[data-show-restaurant="true"] .plan-figure--restaurant {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Plan grid — every plan is a 12×12 CSS grid of cells. Empty cells preserve
+   alignment; seat cells render a small dim outline shape; VIP cells fill
+   brass when the cascade reaches them. Structural elements (bar, stage,
+   garden, hallway) are encoded as negative space — no filled blocks. */
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 18px);
+  grid-template-rows: repeat(12, 18px);
+}
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Seat shape — outline by default. Square or circle picked by .shape-*.
+   The cell visibility is gated by --threshold (random 0..1 set per cell)
+   and --seat-progress (0..1 set on the pin from scroll). When progress
+   exceeds threshold, the cell snaps in. Reverses naturally on scroll-up. */
+.cell.seat::before,
+.cell.vip::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: transparent;
+  border: 1px solid rgba(239,232,219,0.50);
+  /* Thin transition window: cell flips on within 3% of progress past its
+     threshold. Wider value (e.g. 30) → snappier; lower (e.g. 10) → softer. */
+  /* Multiplier sets the per-cell fade window. *6 → each cell takes ~16% of
+     overall progress to fade from invisible to fully visible, so the
+     matrix reads as a soft fade rather than a snappy step. */
+  opacity: clamp(
+    0,
+    calc((var(--seat-progress, 0) - var(--threshold, 1)) * 6),
+    1
+  );
+  transition-property: background, border-color, box-shadow, transform;
+  transition-duration: 520ms;
+  transition-timing-function: cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.plan-grid.shape-square .cell.seat::before,
+.plan-grid.shape-square .cell.vip::before { border-radius: 1.5px; }
+.plan-grid.shape-circle .cell.seat::before,
+.plan-grid.shape-circle .cell.vip::before { border-radius: 50%; }
+
+/* VIP highlight — same outline reveal as regular seats, but on stage
+   advance the outline FILLS with brass to read as "taken / booked". */
+[data-stage="1"] .cell.vip.h1::before,
+[data-stage="2"] .cell.vip.h1::before, [data-stage="3"] .cell.vip.h1::before,
+[data-stage="2"] .cell.vip.h2::before, [data-stage="3"] .cell.vip.h2::before,
+[data-stage="3"] .cell.vip.h3::before {
+  background: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 0 0 10px rgba(201,166,113,0.50);
+}
+
+/* Plan figure — layout for the grid + label below */
+.plan-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  margin: 0;
+}
+.plan-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(239,232,219,0.55);
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Below 1024px the desktop 5-plan row stops fitting — there's not enough
+   horizontal room for five 12×18px grids side by side. Rather than wrap
+   to two rows (which broke the visual rhythm with Restaurant ending up
+   on its own line), we drop to the same 3-plan flex layout used on
+   phones. Airplane + Hotel are hidden; Theater + Restaurant + Arena fit
+   on one row at every viewport from tablet down. */
+@media (max-width: 1024px) {
+  .mk-seats-inner {
+    padding-left: 0;
+    padding-right: 0;
+    max-width: none;
+    overflow: visible;
+  }
+  .mk-seats-row {
+    display: flex;
+    justify-content: center;
+    align-items: end;
+    gap: 16px;
+    width: max-content;
+    margin: 0 auto;
+    grid-template-columns: none;
+  }
+  .plan-figure { flex: 0 0 auto; gap: 18px; }
+  .plan-figure:nth-child(1),
+  .plan-figure:nth-child(5) { display: none; }
+  .plan-figure:nth-child(2) { transform: translateX(72px); }
+  .plan-figure:nth-child(4) { transform: translateX(-72px); }
+  .mk-seats[data-show-restaurant="true"] .plan-figure { transform: translateX(0); }
+  /* Tablet-sized cells — 18px → 14px keeps the row from running edge to
+     edge on a smaller laptop while still reading clearly. */
+  .plan-grid {
+    grid-template-columns: repeat(12, 14px);
+    grid-template-rows: repeat(12, 14px);
+  }
+  .cell.seat::before, .cell.vip::before { width: 6px; height: 6px; }
+}
+@media (max-width: 720px) {
+  .mk-seats-h { font-size: 32px; }
+  /* Phone — shrink cells further so Theater + Arena push slightly off
+     the edges instead of being fully visible. The wider translateX in
+     the 1024px block above isn't needed here — re-tune for the narrower
+     plan width. */
+  .mk-seats-row { gap: 10px; }
+  .plan-figure { gap: 16px; }
+  .plan-figure:nth-child(2) { transform: translateX(56px); }
+  .plan-figure:nth-child(4) { transform: translateX(-56px); }
+  .plan-grid {
+    grid-template-columns: repeat(12, 11px);
+    grid-template-rows: repeat(12, 11px);
+  }
+  .cell.seat::before, .cell.vip::before { width: 5px; height: 5px; }
+  .plan-label { font-size: 10px; letter-spacing: 0.18em; }
+}

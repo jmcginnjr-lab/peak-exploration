@@ -1,0 +1,1045 @@
+/* =========================================================================
+   Peak — Earnings Calculator (internal sales tool)
+   All class names prefixed `cal-` so they can't collide with marketing
+   styles. Mirrors the prototype in /calculator/Earnings Calculator.html;
+   see calculator/README.md for spec source-of-truth.
+   ========================================================================= */
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+button { font-family: inherit; cursor: pointer; }
+
+/* ── Shell + topbar ───────────────────────────────────────────────────── */
+.cal-shell {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 32px 40px 64px;
+}
+
+.cal-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+  gap: 24px;
+}
+.cal-lockup img { height: 26px; width: auto; display: block; }
+.cal-topbar-right {
+  display: flex; align-items: center; gap: 18px;
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--fg-subtle); letter-spacing: 0.08em;
+}
+.cal-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--fg-muted); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.12em;
+}
+.cal-pill-dot {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--peak-success);
+  box-shadow: 0 0 8px rgba(107,142,90,0.55);
+  display: inline-block;
+}
+
+/* ── Title row ────────────────────────────────────────────────────────── */
+.cal-page-title-row {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 32px; gap: 32px;
+}
+.cal-page-eyebrow {
+  font-size: 11px; font-weight: 500;
+  letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+  color: var(--accent); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 14px;
+}
+.cal-rule {
+  width: 32px; height: 1px;
+  background: var(--accent);
+  display: inline-block;
+}
+.cal-page-h {
+  font-family: var(--font-display);
+  font-size: 42px; font-weight: 500;
+  letter-spacing: -0.02em; line-height: 1.05;
+  margin: 0; color: var(--fg);
+  max-width: 720px; text-wrap: balance;
+}
+.cal-page-h em { font-style: normal; color: var(--accent); }
+
+/* Inline-editable restaurant slot inside the H1.
+   - .is-default → "this restaurant" placeholder, dotted brass underline
+     to hint it's tappable. Color is muted; brass on hover.
+   - .is-set     → resolved name, solid brass underline, brass text.
+   - Both render as a borderless button so the affordance is real
+     keyboard-focusable, not just a styled span. */
+.cal-headline-name {
+  font: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  letter-spacing: inherit;
+  cursor: text;
+  transition: color var(--dur-fast);
+}
+.cal-headline-name.is-default {
+  color: var(--fg-muted);
+  border-bottom: 2px dashed rgba(201,166,113,0.55);
+  padding-bottom: 1px;
+}
+.cal-headline-name.is-default:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.cal-headline-name.is-set {
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 1px;
+}
+.cal-headline-name.is-set:hover { color: var(--accent-hover); border-bottom-color: var(--accent-hover); }
+
+.cal-headline-edit { position: relative; display: inline-block; vertical-align: baseline; }
+.cal-headline-input {
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--accent);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid var(--accent);
+  padding: 0 0 1px;
+  outline: none;
+  caret-color: var(--accent);
+  min-width: 120px;
+}
+.cal-headline-input::placeholder {
+  color: var(--fg-subtle);
+  font-style: normal;
+}
+.cal-headline-input-sizer {
+  /* Invisible sizer used to measure the typed text so the input width
+     follows what the rep has typed. Must match the input's typography. */
+  position: absolute;
+  top: 0; left: 0;
+  visibility: hidden;
+  white-space: pre;
+  pointer-events: none;
+  font: inherit;
+  letter-spacing: inherit;
+  padding: 0 0 1px;
+}
+
+/* Fuzzy-match dropdown — floats under the inline headline input. The
+   wrapper (.cal-headline-edit) is position:relative so this list anchors
+   to it. Body type (not display), tight rows, brass highlight. */
+.cal-headline-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 320px; max-width: 460px;
+  margin: 0; padding: 6px;
+  list-style: none;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.45);
+  z-index: 5;
+  display: flex; flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-sans);
+  letter-spacing: 0;
+}
+.cal-headline-option {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--fg);
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.cal-headline-option.is-highlighted {
+  background: rgba(201,166,113,0.10);
+  color: var(--accent);
+}
+.cal-headline-option-name {
+  font-size: 14px; font-weight: 500;
+}
+.cal-headline-option-loc {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+.cal-headline-option.is-highlighted .cal-headline-option-loc { color: var(--accent); }
+
+.cal-page-sub {
+  font-size: 13px; color: var(--fg-muted);
+  max-width: 340px; text-align: right;
+  line-height: 1.5;
+}
+
+/* =========================================================================
+   SimpleView — customer-facing top section.
+   One rounded card. Three blocks (lookup / earnings / scenarios) stacked
+   vertically with hairline dividers between them. The big earnings number
+   is the focal point — display typeface, oversized, brass dash between
+   the lo/hi values. Below that, three large scenario cards in a 3-column
+   grid (collapsing to 1-column on phones). Toggle at the bottom reveals
+   the seller's advanced canvas underneath.
+   ========================================================================= */
+/* Wrapper so the toggle pill can sit OUTSIDE the card's overflow:hidden
+   without being clipped. The pill is a sibling of the card and gets its
+   position via this wrapper. */
+.cal-simple-wrap {
+  position: relative;
+  margin-bottom: 64px;
+}
+.cal-simple {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.cal-simple-block { padding: 28px 40px; }
+.cal-simple-divider {
+  height: 1px; background: var(--divider);
+  margin: 0 40px;
+}
+
+/* Lower half — scenarios + (collapsible) advanced canvas share this
+   surface so the section reads as one continuous plane even when the
+   math is hidden. Just barely darker than the card (--bg-elev #12221D)
+   so the contrast is subtle — about the lift of a recessed panel. */
+.cal-simple-lower {
+  --lower-bg: #101E18;
+  background: var(--lower-bg);
+  border-top: 1px solid var(--border);
+}
+.cal-simple-eyebrow {
+  font-size: 10px; font-weight: 500;
+  letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+.cal-simple-earnings { padding-top: 32px; padding-bottom: 28px; }
+.cal-simple-nums {
+  display: flex; align-items: baseline; gap: 18px;
+  flex-wrap: wrap;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 22px;
+}
+.cal-simple-lo {
+  font-family: var(--font-display);
+  font-size: 40px; font-weight: 500;
+  color: var(--fg-muted);
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+.cal-simple-hi {
+  font-family: var(--font-display);
+  font-size: 64px; font-weight: 500;
+  color: var(--fg);
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+.cal-simple-dash {
+  color: var(--accent);
+  font-size: 28px;
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+.cal-simple-bar-ticks {
+  display: flex; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 9.5px;
+  color: var(--fg-subtle); letter-spacing: 0.08em;
+  margin-bottom: 8px; text-transform: uppercase;
+}
+.cal-simple-bar {
+  position: relative; height: 10px; border-radius: 999px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  overflow: visible;
+  margin-bottom: 18px;
+  transition: opacity var(--dur-fast);
+}
+.cal-simple-bar--empty .cal-simple-bar-fill { opacity: 0; }
+.cal-simple-bar--empty .cal-simple-bar-mid  { opacity: 0.25; }
+.cal-simple-bar-fill {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg,
+    var(--peak-brass-600) 0%,
+    var(--peak-brass-400) 60%,
+    var(--peak-brass-300) 100%);
+  border-radius: 999px;
+  transition: opacity var(--dur-fast);
+}
+.cal-simple-bar-mid {
+  position: absolute; top: -4px; bottom: -4px; left: 50%;
+  width: 2px; background: var(--fg); transform: translateX(-50%);
+  border-radius: 1px;
+}
+.cal-simple-bar-mid::after {
+  content: ""; position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
+  width: 10px; height: 10px; border-radius: 999px;
+  background: var(--fg); border: 2px solid var(--bg-elev);
+}
+.cal-simple-foot {
+  font-size: 13px; color: var(--fg-muted);
+  line-height: 1.55;
+  max-width: 60ch;
+}
+.cal-simple-foot strong { color: var(--fg); font-weight: 500; }
+
+/* Disclaimer caption — mono, subtle, sits just below the foot text so
+   the customer reads it as informational provenance, not a warning. */
+.cal-simple-disclaimer {
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+
+/* Scenario block — background is provided by the parent .cal-simple-lower
+   wrapper so the section blends with the advanced panel that mounts
+   beneath it. */
+.cal-simple-scenarios {
+  padding-top: 26px;
+  padding-bottom: 30px;
+}
+.cal-simple-scenarios.is-disabled {
+  opacity: 0.6;
+}
+.cal-simple-scenarios.is-disabled .cal-scenario-card {
+  cursor: default;
+  pointer-events: none;
+}
+.cal-simple-scenarios-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.cal-scenario-card {
+  display: flex; align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  /* Subtle lift off the lower-half bg — just enough to register as
+     raised cards. Was --bg-card (#1A2E28) which was too contrasty
+     against the lighter lower-half; new tone is ~5–6 hex points above
+     --lower-bg. */
+  background: #16241E;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-align: left;
+  color: var(--fg);
+  transition: border-color var(--dur-fast),
+              background var(--dur-fast),
+              transform var(--dur-fast),
+              box-shadow var(--dur-fast);
+  cursor: pointer;
+}
+.cal-scenario-card:hover {
+  border-color: var(--accent);
+  background: rgba(201,166,113,0.06);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(201,166,113,0.08);
+}
+.cal-scenario-card:active { transform: translateY(0); }
+.cal-scenario-icon {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 999px;
+  background: rgba(201,166,113,0.10);
+  color: var(--accent);
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.cal-scenario-card:hover .cal-scenario-icon {
+  background: rgba(201,166,113,0.18);
+  color: var(--accent-hover);
+}
+.cal-scenario-text {
+  display: flex; flex-direction: column; gap: 4px;
+  min-width: 0;
+}
+.cal-scenario-eyebrow {
+  font-family: var(--font-display);
+  font-size: 16px; font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+.cal-scenario-card:hover .cal-scenario-eyebrow { color: var(--accent); }
+.cal-scenario-caption {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--fg-subtle);
+  text-transform: uppercase;
+}
+
+/* Hi-number positioning context — Confetti is rendered as a child of
+   this span, so its absolute positioning is anchored to the Hi number's
+   bounding box. The burst is contained to just the big dollar amount,
+   not the whole numbers row. */
+.cal-simple-hi-wrap {
+  position: relative;
+  display: inline-block;
+  vertical-align: baseline;
+}
+
+/* Confetti — brass particle pulses anchored over the Hi number. Three
+   sequential pulses (see Confetti.jsx) make the burst dense; each
+   particle's percentage origin lands somewhere across the Hi number's
+   width. */
+.cal-confetti {
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 3;
+}
+.cal-confetti-bit {
+  position: absolute;
+  top: 0;
+  width: 5px; height: 9px;
+  border-radius: 1.5px;
+  background: var(--peak-brass-400);
+  opacity: 0;
+  transform-origin: center;
+  animation: cal-confetti-rise var(--duration, 900ms) var(--delay, 0ms) cubic-bezier(0.2, 0.6, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+.cal-confetti-bit--0 { background: var(--peak-brass-400); }
+.cal-confetti-bit--1 { background: var(--peak-brass-300); width: 4px; height: 7px; }
+.cal-confetti-bit--2 { background: var(--peak-brass-200); width: 3px; height: 6px; }
+
+@keyframes cal-confetti-rise {
+  0%   { opacity: 0; transform: translate(-50%, 0) rotate(0); }
+  10%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0)), var(--dy, -70px)) rotate(var(--rot, 60deg)); }
+}
+
+/* Gold gradient wash — fires alongside the count-up. Applied directly to
+   the Hi number (the "main metric"), NOT the parent .cal-simple-nums.
+   Reason: .cal-simple-hi lives inside an inline-block .cal-simple-hi-wrap
+   (so confetti can position relative to it). An inline-block descendant
+   breaks the parent's `background-clip: text` for nested text — the Hi
+   glyphs were rendering fully transparent. Putting the clip on the Hi
+   span itself avoids that. */
+.cal-simple-nums.is-glistening .cal-simple-hi {
+  background: linear-gradient(
+    100deg,
+    var(--fg)              0%,
+    var(--fg)              30%,
+    var(--peak-brass-300)  47%,
+    var(--peak-brass-200)  52%,
+    var(--fg)              70%,
+    var(--fg)             100%);
+  background-size: 220% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: cal-glisten 900ms cubic-bezier(0.2, 0.6, 0.2, 1) forwards;
+}
+@keyframes cal-glisten {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* Advanced toggle — pill straddling the simple card's bottom border.
+   Positioned on .cal-simple-wrap (sibling of .cal-simple), NOT inside
+   the card, because the card has overflow:hidden for its inner
+   clipping and would otherwise clip the bottom half of the pill. With
+   the wrapper, the pill is fully visible and sits ON the card's
+   bottom border, centered (translateY(-50%) on the pill = pill's
+   center is on bottom: 0 of the wrapper = card's bottom edge). */
+.cal-simple-toggle-wrap {
+  position: absolute;
+  left: 50%; bottom: 0;
+  transform: translate(-50%, 50%);
+  z-index: 4;
+  pointer-events: none;             /* so the pill alone receives clicks */
+}
+.cal-advanced-toggle {
+  pointer-events: auto;
+  display: inline-flex; align-items: center; gap: 10px;
+  /* Opaque, distinct from both --bg (page) and --lower-bg (lower half)
+     so the pill reads as a solid object on the border, not a glass
+     button through which the border keeps going. Was var(--bg), which
+     matched the page bg exactly and made the pill look transparent. */
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+  border-radius: 999px;
+  padding: 10px 22px 10px 24px;
+  font-family: var(--font-sans);
+  font-size: 12px; font-weight: 500;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: color var(--dur-fast), border-color var(--dur-fast), background var(--dur-fast);
+}
+.cal-advanced-toggle:hover {
+  color: var(--accent);
+  border-color: var(--border-strong);
+  /* Stay opaque on hover — a brass-tinted rgba would re-introduce the
+     transparency the user just asked us to fix. */
+  background: #1A2E28;
+}
+.cal-advanced-toggle-chev {
+  font-size: 10px;
+  line-height: 1;
+  transition: transform var(--dur-base);
+}
+.cal-advanced-toggle.is-open .cal-advanced-toggle-chev {
+  transform: rotate(-180deg);
+}
+
+/* Advanced wrap — collapses via grid-template-rows 0fr ↔ 1fr so the
+   inner panel's height animates smoothly without measuring. The clip
+   layer enforces overflow: hidden so children clip during transition. */
+.cal-advanced-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 420ms cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.cal-advanced-wrap.is-open {
+  grid-template-rows: 1fr;
+}
+.cal-advanced-clip {
+  overflow: hidden;
+  min-height: 0;
+}
+/* Hairline above the advanced panel when it opens — same divider style
+   as elsewhere in the controls column. */
+.cal-advanced-wrap.is-open .cal-advanced-clip > .cal-advanced {
+  border-top: 1px solid var(--border);
+}
+.cal-advanced { /* no margin — sits flush in the parent card */ }
+
+/* When the controls panel is shown in advanced mode (no lookup at top
+   anymore — lookup lives in the simple view), surface the active
+   restaurant as a quiet label so the seller has context. */
+.cal-controls-restaurant {
+  font-family: var(--font-display);
+  font-size: 17px; font-weight: 500;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+}
+
+/* ── Canvas (controls + divider + results) ─────────────────────────────── */
+.cal-canvas {
+  /* Two-column grid on ONE continuous surface — both columns share the
+     same --lower-bg tone (inherited from .cal-simple-lower), so the math
+     section reads as a single uniform panel. The 1px hairline between
+     the columns is rendered explicitly by .cal-canvas-divider rather
+     than a background gradient — cleaner and easier to control at
+     responsive breakpoints. */
+  --controls-w: 400px;
+  background: transparent;
+  display: grid;
+  grid-template-columns: minmax(0, var(--controls-w)) 1px minmax(0, 1fr);
+}
+.cal-canvas-divider { background: var(--border); }
+.cal-canvas-divider { background: transparent; }
+
+/* ── Controls column ──────────────────────────────────────────────────── */
+.cal-controls {
+  padding: 32px 40px 36px;
+  min-width: 0;
+  background: transparent;
+  display: flex; flex-direction: column; gap: 22px;
+  /* No sticky — controls now live inside an overflow:hidden collapse
+     wrapper, which breaks position:sticky anyway. */
+}
+
+.cal-group-eyebrow {
+  font-size: 10px; font-weight: 500;
+  letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+  color: var(--fg-muted);
+  margin: 0 0 4px;
+}
+
+/* Lookup */
+.cal-lookup-eyebrow {
+  font-size: 10px; font-weight: 500;
+  letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+  color: var(--accent); margin-bottom: 10px;
+}
+.cal-lookup-field {
+  display: flex; gap: 8px; align-items: stretch;
+  min-width: 0;
+}
+.cal-lookup-field input {
+  flex: 1; min-width: 0; width: 100%;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 12px; height: 38px;
+  color: var(--fg); font-family: var(--font-sans); font-size: 13.5px;
+  outline: none;
+  transition: border-color var(--dur-fast);
+}
+.cal-lookup-field input:focus { border-color: var(--accent); }
+.cal-lookup-field input::placeholder { color: var(--fg-subtle); }
+.cal-lookup-field button {
+  height: 38px; padding: 0 14px;
+  background: var(--accent); color: var(--fg-on-brass);
+  border: 0; border-radius: var(--radius-md);
+  font-size: 12.5px; font-weight: 600;
+  letter-spacing: 0.01em; white-space: nowrap;
+  transition: background var(--dur-fast);
+}
+.cal-lookup-field button:hover { background: var(--accent-hover); }
+.cal-lookup-field button:disabled { opacity: 0.5; cursor: default; }
+.cal-lookup-status {
+  font-family: var(--font-mono); font-size: 10.5px;
+  color: var(--fg-subtle); letter-spacing: 0.04em;
+  margin-top: 8px; min-height: 14px;
+}
+.cal-lookup-status--loading { color: var(--peak-info); }
+.cal-lookup-status--done    { color: var(--peak-success); }
+
+/* ── Control row ──────────────────────────────────────────────────────── */
+.cal-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  row-gap: 8px;
+  align-items: center;
+  padding: 12px 0;
+  position: relative;
+}
+.cal-control + .cal-control { border-top: 1px solid var(--divider); }
+.cal-control:focus-within::before {
+  content: ''; position: absolute;
+  left: -28px; top: 8px; bottom: 8px;
+  width: 2px; background: var(--accent); border-radius: 2px;
+}
+.cal-control-label {
+  grid-column: 1;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--fg-muted);
+  min-width: 0;
+}
+.cal-control-name { min-width: 0; }
+
+.cal-control-value {
+  grid-column: 2; grid-row: 1;
+  display: flex; align-items: baseline; gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.cal-control-value input {
+  width: 64px; text-align: right;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 17px; font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition: border-color var(--dur-fast), background var(--dur-fast);
+  -moz-appearance: textfield;
+}
+.cal-control-value input::-webkit-outer-spin-button,
+.cal-control-value input::-webkit-inner-spin-button {
+  -webkit-appearance: none; margin: 0;
+}
+.cal-control-value input:hover { border-color: var(--border); }
+.cal-control-value input:focus {
+  border-color: var(--accent);
+  background: var(--bg-inset);
+}
+.cal-currency {
+  color: var(--fg-subtle); font-size: 13px; font-weight: 500;
+  margin-right: -2px;
+}
+
+/* Badge */
+.cal-badge {
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 1px 5px; border-radius: 3px; line-height: 1.3;
+}
+.cal-badge--est {
+  color: var(--peak-warning);
+  background: rgba(194,146,68,0.10);
+  border: 1px solid rgba(194,146,68,0.22);
+}
+.cal-badge--auto {
+  color: var(--peak-success);
+  background: rgba(107,142,90,0.12);
+  border: 1px solid rgba(107,142,90,0.25);
+}
+
+/* Slider */
+.cal-control-slider {
+  grid-column: 1 / -1; grid-row: 2;
+  position: relative; height: 22px;
+  display: flex; align-items: center;
+}
+.cal-control-slider input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; background: transparent; height: 22px;
+  margin: 0; padding: 0; outline: none;
+}
+.cal-control-slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px; border-radius: 2px;
+  background: linear-gradient(to right,
+    var(--accent) 0%, var(--accent) var(--fill, 0%),
+    var(--bg-inset) var(--fill, 0%), var(--bg-inset) 100%);
+  border: 1px solid var(--border);
+}
+.cal-control-slider input[type="range"]::-moz-range-track {
+  height: 3px; border-radius: 2px;
+  background: var(--bg-inset); border: 1px solid var(--border);
+}
+.cal-control-slider input[type="range"]::-moz-range-progress {
+  height: 3px; border-radius: 2px; background: var(--accent);
+}
+.cal-control-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; border-radius: 999px;
+  background: var(--peak-bone-50); border: 2px solid var(--accent);
+  margin-top: -7px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  cursor: grab;
+  transition: transform var(--dur-fast), border-color var(--dur-fast);
+}
+.cal-control-slider input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.15); cursor: grabbing;
+}
+.cal-control-slider input[type="range"]::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 999px;
+  background: var(--peak-bone-50); border: 2px solid var(--accent);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4); cursor: grab;
+}
+.cal-control-slider input[type="range"]:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(201,166,113,0.18), 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* Suggestion chips */
+.cal-suggest-wrap { display: flex; flex-direction: column; }
+.cal-suggest-row {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.cal-suggest-chip {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: color var(--dur-fast), border-color var(--dur-fast), background var(--dur-fast);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.cal-suggest-chip:hover {
+  color: var(--accent); border-color: rgba(201,166,113,0.32);
+  background: rgba(201,166,113,0.04);
+}
+.cal-suggest-glyph {
+  font-family: var(--font-mono); color: var(--fg-subtle);
+  font-size: 10px; letter-spacing: 0;
+}
+.cal-suggest-chip:hover .cal-suggest-glyph { color: var(--accent); }
+
+/* Controls footer */
+.cal-controls-foot {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 14px; border-top: 1px solid var(--divider);
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--fg-subtle); letter-spacing: 0.06em;
+}
+.cal-btn-ghost {
+  height: 30px; padding: 0 12px;
+  background: transparent; color: var(--fg-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.04em;
+  transition: color var(--dur-fast), border-color var(--dur-fast), background var(--dur-fast);
+}
+.cal-btn-ghost:hover {
+  color: var(--fg); border-color: var(--border-strong);
+  background: rgba(201,166,113,0.04);
+}
+
+/* ── Results column ───────────────────────────────────────────────────── */
+.cal-results {
+  padding: 32px 44px 36px;
+  min-width: 0;
+  display: flex; flex-direction: column;
+}
+.cal-res-section {
+  padding: 22px 0;
+  border-top: 1px solid var(--divider);
+}
+.cal-res-section:first-child {
+  padding-top: 0; border-top: 0;
+}
+.cal-res-section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 18px; gap: 16px;
+}
+.cal-res-section-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 500; letter-spacing: -0.01em;
+  color: var(--fg);
+}
+.cal-res-section-head h3 em { font-style: normal; color: var(--accent); }
+.cal-note {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--fg-subtle); letter-spacing: 0.1em; text-transform: uppercase;
+  text-align: right;
+}
+
+/* Annual block */
+.cal-annual {
+  display: grid; grid-template-columns: 1.4fr 1fr;
+  gap: 28px; align-items: stretch;
+  min-width: 0;
+}
+.cal-annual-range { min-width: 0; }
+.cal-ar-eyebrow {
+  font-size: 10px; font-weight: 500;
+  letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+  color: var(--accent); margin-bottom: 14px;
+}
+.cal-ar-nums {
+  display: flex; align-items: baseline; gap: 14px;
+  margin-bottom: 18px; flex-wrap: wrap;
+  font-variant-numeric: tabular-nums;
+}
+.cal-ar-num {
+  font-family: var(--font-display);
+  font-size: 44px; font-weight: 500;
+  letter-spacing: -0.025em; line-height: 1;
+  color: var(--fg);
+}
+.cal-ar-num--lo { color: var(--fg-muted); font-size: 28px; }
+.cal-ar-dash { color: var(--fg-subtle); font-size: 22px; }
+.cal-ar-bar-ticks {
+  display: flex; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 9.5px;
+  color: var(--fg-subtle); letter-spacing: 0.08em;
+  margin-bottom: 8px; text-transform: uppercase;
+}
+.cal-ar-bar {
+  position: relative; height: 8px; border-radius: 999px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  overflow: visible;
+  margin-bottom: 14px;
+}
+.cal-ar-bar-fill {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg,
+    var(--peak-brass-600) 0%,
+    var(--peak-brass-400) 60%,
+    var(--peak-brass-300) 100%);
+  border-radius: 999px;
+}
+.cal-ar-bar-mid {
+  position: absolute; top: -4px; bottom: -4px; left: 50%;
+  width: 2px; background: var(--fg); transform: translateX(-50%);
+  border-radius: 1px;
+}
+.cal-ar-bar-mid::after {
+  content: ""; position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
+  width: 10px; height: 10px; border-radius: 999px;
+  background: var(--fg); border: 2px solid var(--bg-elev);
+}
+.cal-ar-foot {
+  font-size: 12.5px; color: var(--fg-muted);
+  line-height: 1.55;
+}
+.cal-ar-foot strong { color: var(--fg); font-weight: 500; }
+
+.cal-annual-stats {
+  display: flex; flex-direction: column;
+  padding-left: 24px;
+  justify-content: center;
+  gap: 18px;
+  min-width: 0;
+}
+.cal-ast { display: flex; flex-direction: column; gap: 3px; }
+.cal-ast-k {
+  font-size: 10px; font-weight: 500;
+  letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.cal-ast-v {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 500;
+  color: var(--fg); letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.cal-ast-s {
+  font-size: 11px; color: var(--fg-subtle);
+  font-family: var(--font-mono); letter-spacing: 0.04em;
+}
+
+/* Projection block */
+.cal-proj-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 28px;
+  min-width: 0;
+}
+.cal-proj-chart-wrap {
+  min-width: 0;
+  display: flex; flex-direction: column;
+}
+.cal-proj-chart-legend {
+  display: flex; gap: 16px;
+  margin-bottom: 10px;
+  font-family: var(--font-mono); font-size: 9.5px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.cal-legend-item { display: flex; align-items: center; gap: 6px; }
+.cal-legend-swatch {
+  width: 14px; height: 3px; border-radius: 2px;
+  display: inline-block;
+}
+.cal-legend-swatch--flat   { background: var(--peak-slate-500); }
+.cal-legend-swatch--growth { background: var(--accent); }
+.cal-legend-swatch--index  { background: var(--peak-info); }
+
+.cal-chart-svg {
+  width: 100%; display: block;
+  background: transparent;
+  height: 240px;
+}
+
+.cal-proj-cards {
+  display: flex; flex-direction: column; gap: 14px;
+  min-width: 0;
+}
+.cal-proj-card {
+  padding: 4px 0 14px 14px;
+  border: 0;
+  border-left: 2px solid;
+  display: flex; flex-direction: column; gap: 3px;
+  min-width: 0;
+}
+.cal-proj-card--flat   { border-left-color: var(--peak-slate-500); }
+.cal-proj-card--growth { border-left-color: var(--accent); }
+.cal-proj-card--index  { border-left-color: var(--peak-info); }
+
+.cal-pc-label {
+  font-size: 9.5px; font-weight: 500;
+  letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.cal-pc-val {
+  font-family: var(--font-display);
+  font-size: 24px; font-weight: 500;
+  color: var(--fg); letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums; line-height: 1.1;
+}
+.cal-pc-sub {
+  font-size: 11px; color: var(--fg-subtle);
+  font-family: var(--font-mono); letter-spacing: 0.02em;
+}
+.cal-proj-card--growth .cal-pc-val { color: var(--accent); }
+
+/* Flash animation — brass pulse fading back to inherit/parent color. */
+.cal-flash {
+  animation: cal-flash 280ms var(--ease-out);
+}
+@keyframes cal-flash {
+  0%   { color: var(--accent); }
+  100% { color: inherit; }
+}
+.cal-proj-card--growth .cal-pc-val.cal-flash {
+  animation: cal-flash-growth 280ms var(--ease-out);
+}
+@keyframes cal-flash-growth {
+  0%   { color: var(--peak-brass-300); }
+  100% { color: var(--accent); }
+}
+
+/* Footer */
+.cal-foot-note {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--divider);
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--fg-subtle); letter-spacing: 0.08em; text-transform: uppercase;
+  display: flex; justify-content: space-between; gap: 24px;
+}
+
+.cal-placeholder { color: var(--fg-subtle); }
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 1080px) {
+  .cal-shell { padding: 20px 16px 48px; }
+  .cal-canvas {
+    grid-template-columns: 1fr;
+    background: var(--bg-elev);
+  }
+  .cal-canvas-divider { width: 100%; height: 1px; background: var(--border); }
+  .cal-controls {
+    position: static;
+    background: var(--controls-bg, #0F1C18);
+    padding: 24px 24px 28px;
+  }
+  .cal-results { padding: 24px 24px 32px; }
+  .cal-annual { grid-template-columns: 1fr; }
+  .cal-annual-stats {
+    border-left: 0;
+    border-top: 1px solid var(--divider);
+    padding-left: 0; padding-top: 18px;
+  }
+  .cal-proj-grid { grid-template-columns: 1fr; }
+  .cal-topbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .cal-page-title-row { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .cal-page-sub { text-align: left; max-width: none; }
+  .cal-page-h { font-size: 36px; }
+}
+@media (max-width: 1080px) {
+  .cal-simple-block { padding: 24px 24px; }
+  .cal-simple-divider { margin: 0 24px; }
+  .cal-simple-hi { font-size: 52px; }
+  .cal-simple-lo { font-size: 32px; }
+  .cal-simple-scenarios-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .cal-scenario-card { padding: 18px 16px; min-height: 84px; }
+  .cal-scenario-eyebrow { font-size: 15px; }
+}
+@media (max-width: 720px) {
+  .cal-simple-scenarios-grid { grid-template-columns: 1fr; }
+  .cal-simple-hi { font-size: 44px; }
+  .cal-simple-lo { font-size: 26px; }
+  .cal-simple-dash { font-size: 22px; }
+  .cal-scenario-card { min-height: 0; padding: 16px 18px; }
+}
+@media (max-width: 560px) {
+  .cal-controls { padding: 20px 18px 24px; }
+  .cal-results { padding: 20px 18px 28px; }
+  .cal-lookup-field { flex-wrap: wrap; }
+  .cal-annual { gap: 18px; }
+  .cal-control:focus-within::before { display: none; }
+  .cal-simple-block { padding: 20px 20px; }
+  .cal-simple-divider { margin: 0 20px; }
+}

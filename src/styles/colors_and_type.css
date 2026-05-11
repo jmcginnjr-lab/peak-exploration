@@ -1,0 +1,294 @@
+/* =========================================================================
+   Peak — Colors & Type
+   -------------------------------------------------------------------------
+   Dark, cinematic, hospitality-native. The brand lives on deep forest
+   green with brass accents; type pairs Inter (spec'd in Brand-Exploration-02)
+   with an editorial serif (Canela-style) for display moments.
+   ========================================================================= */
+
+/* Inter — spec'd typeface. Pulled from Google Fonts. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* Schibsted Grotesk — display typeface. Used for headlines, display moments,
+   editorial titles. Replaces the prior Cormorant Garamond display role. */
+@import url('https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&display=swap');
+
+/* Cormorant Garamond — kept narrowly for pullquotes & editorial italic
+   moments where a serif voice is needed. Do not use for display. */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+
+/* Mono — used sparingly for codes, confirmation numbers, timestamps. */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* =====================================================================
+     COLOR — Core brand
+     ===================================================================== */
+
+  /* Ink — the deep forest green that anchors the brand.
+     Sampled from the "Logo and Text-reverse" lockup background. */
+  --peak-ink-900: #0E1A16;   /* near-black forest — primary surface */
+  --peak-ink-800: #12221D;   /* elevated surface */
+  --peak-ink-700: #1A2E28;   /* card / panel */
+  --peak-ink-600: #243830;   /* hairline fills */
+  --peak-ink-500: #2F4A3F;   /* subtle accent, dividers on dark */
+
+  /* Brass — the gold from the Peak mark. Warm, restrained, not yellow. */
+  --peak-brass-600: #8B6F3F;  /* press / active */
+  --peak-brass-500: #B8945C;  /* default brass */
+  --peak-brass-400: #C9A671;  /* default from logo — brand gold */
+  --peak-brass-300: #D9BC90;  /* hover highlight */
+  --peak-brass-200: #E8D4B3;  /* soft brass tint */
+  --peak-brass-100: #F2E6D0;  /* brass wash */
+
+  /* Bone — paper / light surface. Not pure white — warm, off-white. */
+  --peak-bone-50:  #FAF7F2;   /* page bg (light mode) */
+  --peak-bone-100: #F4EFE6;   /* card on bone */
+  --peak-bone-200: #E9E1D2;   /* divider on bone */
+  --peak-bone-300: #D4C8B0;
+
+  /* Neutrals — cool grays used sparingly, always warmed slightly. */
+  --peak-slate-900: #0B0F0D;
+  --peak-slate-700: #3A4540;
+  --peak-slate-500: #6B736E;
+  --peak-slate-400: #8A928C;
+  --peak-slate-300: #B7BDB8;
+  --peak-slate-200: #D8DCD9;
+  --peak-slate-100: #EEF0EF;
+
+  /* Semantic — muted, never neon. Hospitality-native palette. */
+  --peak-success: #6B8E5A;     /* olive — "confirmed" */
+  --peak-warning: #C29244;     /* amber brass — "attention" */
+  --peak-danger:  #A34A3F;     /* terracotta — "no-show / issue" */
+  --peak-info:    #5D7A8A;     /* slate blue — "system / note" */
+
+  /* =====================================================================
+     COLOR — Semantic tokens (DARK — default for Peak product)
+     ===================================================================== */
+  --bg:         var(--peak-ink-900);
+  --bg-elev:    var(--peak-ink-800);
+  --bg-card:    var(--peak-ink-700);
+  --bg-inset:   #0A1512;
+
+  --fg:         #F2EDE3;          /* primary text on dark — warm bone */
+  --fg-muted:   #A9B0AB;
+  --fg-subtle:  #6F7872;
+  --fg-on-brass: var(--peak-ink-900);
+
+  --accent:     var(--peak-brass-400);
+  --accent-hover: var(--peak-brass-300);
+  --accent-press: var(--peak-brass-600);
+
+  --border:     rgba(201, 166, 113, 0.16);  /* brass-tinted hairline */
+  --border-strong: rgba(201, 166, 113, 0.32);
+  --divider:    rgba(242, 237, 227, 0.08);
+
+  /* =====================================================================
+     TYPOGRAPHY
+     ===================================================================== */
+  --font-sans:     'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display:  'Schibsted Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* --font-serif: legacy alias — now points at the display face so any prior
+     usage automatically picks up Schibsted Grotesk. Use --font-quote for
+     genuine serif moments (pullquotes, editorial italics). */
+  --font-serif:    var(--font-display);
+  --font-quote:    'Cormorant Garamond', 'Canela', 'GT Super', Georgia, serif;
+  --font-mono:     'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+
+  /* Scale — fluid, editorial. The display scale is generous because
+     hospitality copy reads better set large and airy. */
+  --fs-xs:    11px;
+  --fs-sm:    13px;
+  --fs-base:  15px;
+  --fs-md:    17px;
+  --fs-lg:    20px;
+  --fs-xl:    24px;
+  --fs-2xl:   32px;
+  --fs-3xl:   44px;   /* display-s — serif only */
+  --fs-4xl:   64px;   /* display-m — serif only */
+  --fs-5xl:   96px;   /* display-l — serif only */
+
+  --lh-tight: 1.05;
+  --lh-snug:  1.2;
+  --lh-body:  1.55;
+  --lh-loose: 1.7;
+
+  /* Tracking — display serif gets tight, all-caps micro gets widened. */
+  --tracking-tight:  -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.06em;
+  --tracking-eyebrow: 0.18em;   /* used for all-caps eyebrows, labels */
+
+  /* =====================================================================
+     SPACING / RADII / SHADOW / MOTION
+     ===================================================================== */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  --radius-none: 0;
+  --radius-sm:   4px;
+  --radius-md:   8px;   /* default for inputs, chips */
+  --radius-lg:   12px;  /* default for cards */
+  --radius-xl:   20px;
+  --radius-pill: 999px;
+
+  /* Shadows — used very sparingly in dark mode; light mode gets soft lifts. */
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md:  0 8px 24px rgba(0,0,0,0.35);
+  --shadow-lg:  0 24px 60px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 0 1px rgba(201,166,113,0.22), 0 12px 40px rgba(201,166,113,0.12);
+
+  /* Motion — restrained. No bounces. Subtle fades & slides. */
+  --ease-out:    cubic-bezier(0.2, 0.6, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.5, 0, 0.2, 1);
+  --dur-fast:    140ms;
+  --dur-base:    220ms;
+  --dur-slow:    420ms;
+}
+
+/* Light theme override — used on marketing surfaces, occasionally docs. */
+[data-theme="light"] {
+  --bg:        var(--peak-bone-50);
+  --bg-elev:   #FFFFFF;
+  --bg-card:   #FFFFFF;
+  --bg-inset:  var(--peak-bone-100);
+
+  --fg:        var(--peak-ink-900);
+  --fg-muted:  var(--peak-slate-500);
+  --fg-subtle: var(--peak-slate-400);
+
+  --border:    rgba(14, 26, 22, 0.10);
+  --border-strong: rgba(14, 26, 22, 0.20);
+  --divider:   rgba(14, 26, 22, 0.06);
+}
+
+/* =========================================================================
+   SEMANTIC TYPE ROLES
+   Use these in components. Don't set font-size on ad-hoc elements.
+   ========================================================================= */
+
+.peak-display-xl,
+.peak-display-lg,
+.peak-display-md,
+.peak-display-sm {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-tight);
+  color: var(--fg);
+  text-wrap: balance;
+}
+.peak-display-xl { font-size: var(--fs-5xl); }
+.peak-display-lg { font-size: var(--fs-4xl); }
+.peak-display-md { font-size: var(--fs-3xl); }
+.peak-display-sm { font-size: var(--fs-2xl); }
+
+.peak-display-xl em,
+.peak-display-lg em,
+.peak-display-md em,
+.peak-display-sm em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+/* h1–h4 use Inter in product surfaces (nav, tables, forms, dashboards). */
+.peak-h1 {
+  font-family: var(--font-sans);
+  font-size: var(--fs-2xl);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-snug);
+  color: var(--fg);
+}
+.peak-h2 {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: var(--lh-snug);
+  color: var(--fg);
+}
+.peak-h3 {
+  font-family: var(--font-sans);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  line-height: var(--lh-snug);
+  color: var(--fg);
+}
+.peak-h4 {
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  line-height: var(--lh-snug);
+  color: var(--fg);
+}
+
+.peak-body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  font-weight: 400;
+  line-height: var(--lh-body);
+  color: var(--fg);
+}
+.peak-body-sm {
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  line-height: var(--lh-body);
+  color: var(--fg-muted);
+}
+
+/* Eyebrow — all-caps, wide tracking, brass. Used above display heads,
+   for section labels, for stat headers. THE signature Peak label style. */
+.peak-eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.peak-label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--fg-muted);
+}
+
+.peak-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--fg-muted);
+}
+
+/* Editorial pull-quote — the only sanctioned serif moment.
+   Uses Cormorant Garamond for italic, hospitality-warm voice. */
+.peak-quote {
+  font-family: var(--font-quote);
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--fs-xl);
+  line-height: 1.35;
+  color: var(--fg);
+  text-wrap: balance;
+}
+
+/* Utility — brass rule used as a decorative divider under eyebrows. */
+.peak-rule {
+  height: 1px;
+  width: 32px;
+  background: var(--accent);
+  border: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
